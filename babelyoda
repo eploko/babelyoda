@@ -1,0 +1,93 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'fileutils'
+require 'term/ansicolor'
+require 'tmpdir'
+require 'yaml'
+
+include Term::ANSIColor
+
+def main
+  banner
+  check_args
+  config = setup
+  print_config config
+  Dir.mkdir config['tmp_dir']
+
+  # TODO: Do work here...
+
+  FileUtils.rm_rf config['tmp_dir'], :verbose => true
+  success "All done!"
+end
+
+def banner
+  puts "Babel Yoda v1.0"
+  puts "© 2010 Andrey Subbotin <andrey@subbotin.me>"
+end
+
+def usage 
+  puts ""
+  puts "Usage: babelyoda <action> [<rules.babelyoda>]"
+  puts ""
+  puts "<action>          = push | pull"
+  puts "<rules.babelyoda> = babel yoda config file, default is rules.babelyoda"   
+end
+
+def check_args 
+  if (ARGV.length == 0)
+    usage
+    exit 1
+  elsif (ARGV.length == 1)
+    unless (ARGV[0] == 'push' || ARGV[0] == 'pull')
+      usage
+      exit 1
+    end
+  end
+end
+
+def setup
+  result = Hash.new
+  global_config_filename = File.expand_path('~/.babelyoda')
+  if (File.exist?(global_config_filename))
+    result.merge!(YAML.load_file(global_config_filename))
+  end
+  config = YAML.load_file(ARGV[1].nil? ? 'rules.babelyoda' : ARGV[1])
+  config = config['common'].merge(config[ARGV[0]])
+  config['tmp_dir'] = File.join Dir.tmpdir, "epl.babelyoda.#{$$}"
+  config['src_dir'] = File.join config['tmp_dir'], 'src'
+  config['startwd'] = Dir.getwd
+  config['action'] = ARGV[0]
+  result.merge!(config)
+  result
+end
+
+def print_config(config)
+  # Print out settings
+  status "CONFIG"
+  config.keys.sort.each do |k|
+    puts "#{k.upcase}: #{config[k]}"
+  end
+end
+
+def exe(cmd)
+  print magenta, "CMD: '#{cmd}'", reset, "\n"  
+  system cmd
+end
+
+def status(msg)
+  print blue, "--- #{msg} ---", reset, "\n"  
+end
+
+def error(msg)
+  print red, bold, 'ERROR: ', msg, reset, "\n"
+  exit 1
+end
+
+def success(msg)
+  print green, bold, 'SUCCESS: ', msg, reset, "\n"
+end
+
+
+main
+exit 0
