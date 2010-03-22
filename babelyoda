@@ -2,24 +2,31 @@
 
 require 'rubygems'
 require 'fileutils'
+require 'plist'
 require 'term/ansicolor'
 require 'tmpdir'
 require 'yaml'
 
 include Term::ANSIColor
 
+# Main block
+
 def main
   banner
   check_args
-  config = setup
-  print_config config
-  Dir.mkdir config['tmp_dir']
+  setup
+  print_config
+  Dir.mkdir $config['tmp_dir']
 
-  # TODO: Do work here...
+  FileUtils.mkdir_p '.babelyoda', :verbose => true
 
-  FileUtils.rm_rf config['tmp_dir'], :verbose => true
+  eval $config['action']
+
+  FileUtils.rm_rf $config['tmp_dir'], :verbose => true
   success "All done!"
 end
+
+# Aux methods
 
 def banner
   puts "Babel Yoda v1.0"
@@ -47,32 +54,35 @@ def check_args
 end
 
 def setup
-  result = Hash.new
+  $config = Hash.new
   global_config_filename = File.expand_path('~/.babelyoda')
-  if (File.exist?(global_config_filename))
-    result.merge!(YAML.load_file(global_config_filename))
-  end
+  $config.merge!(YAML.load_file(global_config_filename)) if File.exist?(global_config_filename)
   config = YAML.load_file(ARGV[1].nil? ? 'rules.babelyoda' : ARGV[1])
-  config = config['common'].merge(config[ARGV[0]])
   config['tmp_dir'] = File.join Dir.tmpdir, "epl.babelyoda.#{$$}"
   config['src_dir'] = File.join config['tmp_dir'], 'src'
   config['startwd'] = Dir.getwd
   config['action'] = ARGV[0]
-  result.merge!(config)
-  result
+  config['src_lang'] = Plist::parse_xml(config['plist'])['CFBundleDevelopmentRegion']
+  config['src_lang_lproj_dir'] = File.join(config['target_dir'], "#{config['src_lang']}.lproj")
+  config['src_lang_strings_file'] = File.join(config['src_lang_lproj_dir'], 'Localizable.strings')
+  config['initial_strings_file'] = File.join(config['target_dir'], 'Localizable.strings')
+  config['src_lang_xibs_lproj_dir'] = File.join(config['target_dir'], 'XIBs', "#{config['src_lang']}.lproj")
+  $config.merge!(config)
 end
 
-def print_config(config)
+def print_config
   # Print out settings
   status "CONFIG"
-  config.keys.sort.each do |k|
-    puts "#{k.upcase}: #{config[k]}"
-  end
+  y $config
 end
 
 def exe(cmd)
-  print magenta, "CMD: '#{cmd}'", reset, "\n"  
+  putcmd cmd
   system cmd
+end
+
+def putcmd(cmd)
+  print magenta, "CMD: #{cmd}", reset, "\n"  
 end
 
 def status(msg)
@@ -88,6 +98,82 @@ def success(msg)
   print green, bold, 'SUCCESS: ', msg, reset, "\n"
 end
 
+# Globbers
+
+def all_lproj_dirs
+  (dst_lproj_dirs << src_lproj_dir).sort
+end
+
+def src_lproj_dir
+  $config['src_lang_lproj_dir']
+end
+
+def dst_lproj_dirs
+  $config['languages'].collect{ |l| lproj_dir_for_lang(l) }.sort
+end
+
+def lproj_dir_for_lang(lang)
+  File.join($config['target_dir'], "#{lang}.lproj")
+end
+
+def src_code_files
+  $config['dirs'].collect{ |dir| Dir.glob(File.join(dir, '**', '*.{c,h,m,hh,mm}')) }.flatten!.sort
+end
+
+def src_code_strings_files
+  Dir.glob(File.join($config['src_lang_lproj_dir'], '*.strings')).sort
+end
+
+def src_xib_files
+  Dir.glob(File.join($config['src_lang_xibs_lproj_dir'], '*.xib')).sort
+end
+
+# Processing
+
+def push
+  init_lproj_dirs
+  gen_src_code_strings
+  gen_src_xib_strings
+  init_dst_code_strings_files
+end
+
+def pull
+end
+
+def init_lproj_dirs
+  status "PREPARING LPROJ DIRECTORIES"
+  if File.exists?($config['initial_strings_file']) && File.exists?($config['src_lang_strings_file'])
+    error "Both '#{$config['initial_strings_file']}' and '#{$config['src_lang_strings_file']}' exist!"
+  end
+  FileUtils.mkdir_p all_lproj_dirs, :verbose => true
+end
+
+def gen_src_code_strings
+  status "GENERATING STRINGS FILE FOR THE SOURCE LANGUAGE"
+  src_code_files.each do |src_file|
+    rc = exe "genstrings -o '#{$config['src_lang_lproj_dir']}' '#{src_file}'"
+    error "Failed to generate strings for file '#{src_file}'" unless rc
+  end
+end
+
+def gen_src_xib_strings
+  status "GENERATING STRINGS FILES FOR THE SOURCE LANGUAGE XIBS"
+  src_xib_files.each do |xib|
+    strings = xib.slice(0, xib.length - 4) + '.strings'
+    rc = exe "ibtool --generate-strings-file '#{strings}' '#{xib}'"
+    error "Failed to generate strings for file '#{xib}'" unless rc
+  end
+end
+
+def init_dst_code_strings_files
+  status "BOOTSTRAPPING LOCALIZED STRINGS FILES FOR THE TARGET LANGUAGES"
+  src_code_strings_files.each do |src_file|
+    dst_lproj_dirs.each do |dst_lproj_dir|
+      dst_file = File.join(dst_lproj_dir, File.split(src_file).last)
+      FileUtils.cp(src_file, dst_file, :preserve => true, :verbose => true)
+    end
+  end
+end
 
 main
 exit 0
