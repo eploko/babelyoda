@@ -42,14 +42,9 @@ def usage
 end
 
 def check_args 
-  if (ARGV.length == 0)
+  if ARGV.length > 1
     usage
     exit 1
-  elsif (ARGV.length == 1)
-    unless (ARGV[0] == 'push' || ARGV[0] == 'pull')
-      usage
-      exit 1
-    end
   end
 end
 
