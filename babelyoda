@@ -63,8 +63,9 @@ def setup
   config['startwd'] = Dir.getwd
   config['action'] = ARGV[0]
   config['src_lang'] = Plist::parse_xml(config['plist'])['CFBundleDevelopmentRegion']
-  config['src_lang_lproj_dir'] = File.join(config['target_dir'], "#{config['src_lang']}.lproj")
-  config['src_lang_strings_file'] = File.join(config['src_lang_lproj_dir'], 'Localizable.strings')
+  config['src_lang_lproj'] = config['src_lang'] + '.lproj'
+  config['src_lang_lproj_dir'] = File.join(config['target_dir'], config['src_lang_lproj'])
+  config['src_lang_code_strings_file'] = File.join(config['src_lang_lproj_dir'], 'Localizable.strings')
   config['initial_strings_file'] = File.join(config['target_dir'], 'Localizable.strings')
   config['src_lang_xibs_lproj_dir'] = File.join(config['target_dir'], 'XIBs', "#{config['src_lang']}.lproj")
   $config.merge!(config)
@@ -109,7 +110,9 @@ def src_lproj_dir
 end
 
 def dst_lproj_dirs
-  $config['languages'].collect{ |l| lproj_dir_for_lang(l) }.sort
+  $config['languages'].collect{ |l| 
+    lproj_dir_for_lang(l) 
+  }.sort
 end
 
 def lproj_dir_for_lang(lang)
@@ -117,7 +120,9 @@ def lproj_dir_for_lang(lang)
 end
 
 def src_code_files
-  $config['dirs'].collect{ |dir| Dir.glob(File.join(dir, '**', '*.{c,h,m,hh,mm}')) }.flatten!.sort
+  $config['code_dirs'].collect{ |dir|
+    Dir.glob(File.join(dir, '**', '*.{c,h,m,hh,mm}'))
+  }.flatten!.sort
 end
 
 def src_code_strings_files
@@ -125,7 +130,9 @@ def src_code_strings_files
 end
 
 def src_xib_files
-  Dir.glob(File.join($config['src_lang_xibs_lproj_dir'], '*.xib')).sort
+  $config['xib_dirs'].collect{ |dir| 
+    Dir.glob(File.join(dir, '**', $config['src_lang_lproj'], '*.xib')) 
+  }.flatten!.sort
 end
 
 # Processing
@@ -142,18 +149,31 @@ end
 
 def init_lproj_dirs
   status "PREPARING LPROJ DIRECTORIES"
-  if File.exists?($config['initial_strings_file']) && File.exists?($config['src_lang_strings_file'])
-    error "Both '#{$config['initial_strings_file']}' and '#{$config['src_lang_strings_file']}' exist!"
+  if File.exists?($config['initial_strings_file']) && File.exists?($config['src_lang_code_strings_file'])
+    error "Both '#{$config['initial_strings_file']}' and '#{$config['src_lang_code_strings_file']}' exist!"
   end
   FileUtils.mkdir_p all_lproj_dirs, :verbose => true
 end
 
+# generate .strings file into the temporary directory
+# touch the target file so it's created if it didn't exist
+# and then merge it with the new file, preserving any translations made
 def gen_src_code_strings
   status "GENERATING STRINGS FILE FOR THE SOURCE LANGUAGE"
-  src_code_files.each do |src_file|
-    rc = exe "genstrings -o '#{$config['src_lang_lproj_dir']}' '#{src_file}'"
-    error "Failed to generate strings for file '#{src_file}'" unless rc
-  end
+  genstrings src_code_files, $config['tmp_dir']
+  tmp_strings_file = File.join($config['tmp_dir'], 'Localizable.strings')
+  FileUtils.touch $config['src_lang_code_strings_file']
+  merge_strings_at_into tmp_strings_file, $config['src_lang_code_strings_file']
+end
+
+def genstrings(files, output_path)
+  files_safe = escape_cmd_args(files)
+  rc = exe "genstrings -o '#{output_path}' #{files_safe}"
+  error "Failed to generate strings" unless rc
+end
+
+def escape_cmd_args(args)
+  args.collect{ |arg| "'#{arg}'"}.join(' ')
 end
 
 def gen_src_xib_strings
@@ -173,6 +193,12 @@ def init_dst_code_strings_files
       FileUtils.cp(src_file, dst_file, :preserve => true, :verbose => true)
     end
   end
+end
+
+def merge_strings_at_into(src_strings, dst_strings)
+  status "MERGING STRINGS AT '#{src_strings}' INTO '#{dst_strings}'"
+  rc = exe "wincent-strings-util --base '#{src_strings}' --merge '#{dst_strings}' --output '#{dst_strings}'"
+  error "Failed to merge '#{src_strings}' into '#{dst_strings}'" unless rc
 end
 
 main
