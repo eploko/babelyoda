@@ -165,6 +165,7 @@ def pull
 end
 
 def make_tmp_lproj_dirs
+  FileUtils.mkdir_p tmp_lproj_dir_for_lang($config['src_lang']), :verbose => true
   FileUtils.mkdir_p $config['languages'].sort.collect{ |lang| tmp_lproj_dir_for_lang(lang) }, :verbose => true
 end
 
@@ -223,8 +224,10 @@ def extract_untranslated_src_code_strings
 end
 
 def pack_tmp_lproj
+  FileUtils.cp $config['src_lang_code_strings_file'], tmp_lproj_dir_for_lang($config['src_lang']), :verbose => true
   FileUtils.mkdir_p File.join($config['tmp_dir'], 'zips'), :verbose => true
-  $config['languages'].sort.each do |lang| 
+  all_languages = $config['languages'] << $config['src_lang']
+  all_languages.sort.each do |lang| 
     status "PACKING RESOURCES FOR '#{lang}'"    
     FileUtils.cd(tmp_lproj_dir_for_lang(lang), :verbose => true) do |dir|
       rc = exe "zip -r -9 -y '../zips/#{$config['zip_prefix']}_l10n_#{lang}_#{Time.now.strftime('%Y%m%d_%H%M')}.zip' *"
