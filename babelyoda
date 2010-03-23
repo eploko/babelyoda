@@ -16,9 +16,8 @@ def main
   check_args
   setup
   print_config
-  make_tmp_lproj_dirs
-
-  FileUtils.mkdir_p '.babelyoda', :verbose => true
+  
+  prepare_folders
   
   eval $config['action']
 
@@ -67,9 +66,9 @@ def setup
   config['src_lang_lproj_dir'] = File.join(config['target_dir'], config['src_lang_lproj'])
   config['src_lang_code_strings_file'] = File.join(config['src_lang_lproj_dir'], 'Localizable.strings')
   config['initial_strings_file'] = File.join(config['target_dir'], 'Localizable.strings')
-  config['src_lang_xibs_lproj_dir'] = File.join(config['target_dir'], 'XIBs', "#{config['src_lang']}.lproj")
   $config.merge!(config)
   $config['products_folder'] = File.expand_path($config['products_folder'])
+  $config['time_badge'] = Time.now.strftime('%Y%m%d_%H%M')
 end
 
 def print_config
@@ -152,6 +151,13 @@ end
 
 # Processing
 
+def prepare_folders
+  status "PREPARING FOLDERS"
+  FileUtils.mkdir_p ['.babelyoda/translations', '.babelyoda/xibs'], :verbose => true
+  FileUtils.mkdir_p File.join($config['tmp_dir'], 'zips'), :verbose => true
+  make_tmp_lproj_dirs
+end
+
 def push
   init_lproj_dirs
   gen_src_code_strings
@@ -216,7 +222,7 @@ def extract_untranslated_src_code_strings
   tmp_strings_file = File.join($config['tmp_dir'], 'Localizable.strings')
   $config['languages'].sort.each do |lang| 
     src_file = File.join(lproj_dir_for_lang(lang), 'Localizable.strings')
-    dst_file = File.join(tmp_lproj_dir_for_lang(lang), 'Localizable.strings')
+    dst_file = File.join(tmp_lproj_dir_for_lang(lang), mangled_name('Localizable.strings', lang))
     status "EXTRACTING UNTRANSLATED STRINGS FROM '#{src_file}' TO '#{dst_file}'"
     rc = exe "wincent-strings-util --base '#{tmp_strings_file}' --extract '#{src_file}' --output '#{dst_file}'"
     error "Failed to extract untranslated string from '#{src_file}' into '#{dst_file}' based on '#{tmp_strings_file}'" unless rc
@@ -224,20 +230,36 @@ def extract_untranslated_src_code_strings
 end
 
 def pack_tmp_lproj
-  FileUtils.cp $config['src_lang_code_strings_file'], tmp_lproj_dir_for_lang($config['src_lang']), :verbose => true
-  FileUtils.mkdir_p File.join($config['tmp_dir'], 'zips'), :verbose => true
+  # Copy the source language Localizable.strings into the temporary lproj folder.
+  status "COPYING STRINGS FILE FOR '#{$config['src_lang']}'"
+  FileUtils.cp $config['src_lang_code_strings_file'], 
+               File.join(tmp_lproj_dir_for_lang($config['src_lang']), mangled_name('Localizable.strings', $config['src_lang'])), 
+               :verbose => true
+               
+  # Pack all the temporary lproj folders.
   all_languages = $config['languages'] << $config['src_lang']
   all_languages.sort.each do |lang| 
     status "PACKING RESOURCES FOR '#{lang}'"    
     FileUtils.cd(tmp_lproj_dir_for_lang(lang), :verbose => true) do |dir|
-      rc = exe "zip -r -9 -y '../zips/#{$config['zip_prefix']}_l10n_#{lang}_#{Time.now.strftime('%Y%m%d_%H%M')}.zip' *"
+      rc = exe "zip -r -9 -y '../zips/#{zipname_for_lang(lang)}' *"
       error "Failed to pack resources for '#{lang}'" unless rc
     end
   end
 end
 
 def push_tmp_lproj
+  # Move all zips from the temporary lproj folder into the products folder (e.g. ~/Desktop).
   FileUtils.mv Dir.glob(File.join($config['tmp_dir'], 'zips', '*.zip')), $config['products_folder'], :verbose => true
+end
+
+# Generates a mangled filename for the given file and language.
+def mangled_name(file, lang)
+  "#{$config['prefix']}_#{lang}_#{$config['time_badge']}_#{file}"
+end
+
+# Genarates ZIP file name for the given language
+def zipname_for_lang(lang)
+  "#{$config['prefix']}_l10n_#{lang}_#{$config['time_badge']}.zip"
 end
 
 main
