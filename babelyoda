@@ -16,13 +16,13 @@ def main
   check_args
   setup
   print_config
-  Dir.mkdir $config['tmp_dir']
+  make_tmp_lproj_dirs
 
   FileUtils.mkdir_p '.babelyoda', :verbose => true
-
+  
   eval $config['action']
 
-  FileUtils.rm_rf $config['tmp_dir'], :verbose => true
+  # FileUtils.rm_rf $config['tmp_dir'], :verbose => true
   success "All done!"
 end
 
@@ -69,6 +69,7 @@ def setup
   config['initial_strings_file'] = File.join(config['target_dir'], 'Localizable.strings')
   config['src_lang_xibs_lproj_dir'] = File.join(config['target_dir'], 'XIBs', "#{config['src_lang']}.lproj")
   $config.merge!(config)
+  $config['products_folder'] = File.expand_path($config['products_folder'])
 end
 
 def print_config
@@ -99,6 +100,10 @@ def success(msg)
   print green, bold, 'SUCCESS: ', msg, reset, "\n"
 end
 
+def escape_cmd_args(args)
+  args.collect{ |arg| "'#{arg}'"}.join(' ')
+end
+
 # Globbers
 
 def all_lproj_dirs
@@ -119,14 +124,24 @@ def lproj_dir_for_lang(lang)
   File.join($config['target_dir'], "#{lang}.lproj")
 end
 
+def tmp_lproj_dir_for_lang(lang)
+  File.join($config['tmp_dir'], "#{lang}.lproj")
+end
+
 def src_code_files
   $config['code_dirs'].collect{ |dir|
     Dir.glob(File.join(dir, '**', '*.{c,h,m,hh,mm}'))
   }.flatten!.sort
 end
 
-def src_code_strings_files
-  Dir.glob(File.join($config['src_lang_lproj_dir'], '*.strings')).sort
+def dst_code_strings_files
+  $config['languages'].collect{ |l| 
+    File.join(lproj_dir_for_lang(l), 'Localizable.strings')
+  }.sort
+end
+
+def all_code_strings_files
+  (dst_code_strings_files << $config['src_lang_code_strings_file']).sort
 end
 
 def src_xib_files
@@ -140,11 +155,17 @@ end
 def push
   init_lproj_dirs
   gen_src_code_strings
+  extract_untranslated_src_code_strings
   gen_src_xib_strings
-  init_dst_code_strings_files
+  pack_tmp_lproj
+  push_tmp_lproj
 end
 
 def pull
+end
+
+def make_tmp_lproj_dirs
+  FileUtils.mkdir_p $config['languages'].sort.collect{ |lang| tmp_lproj_dir_for_lang(lang) }, :verbose => true
 end
 
 def init_lproj_dirs
@@ -162,18 +183,13 @@ def gen_src_code_strings
   status "GENERATING STRINGS FILE FOR THE SOURCE LANGUAGE"
   genstrings src_code_files, $config['tmp_dir']
   tmp_strings_file = File.join($config['tmp_dir'], 'Localizable.strings')
-  FileUtils.touch $config['src_lang_code_strings_file']
-  merge_strings_at_into tmp_strings_file, $config['src_lang_code_strings_file']
+  merge_strings_at_into tmp_strings_file, all_code_strings_files
 end
 
 def genstrings(files, output_path)
   files_safe = escape_cmd_args(files)
   rc = exe "genstrings -o '#{output_path}' #{files_safe}"
   error "Failed to generate strings" unless rc
-end
-
-def escape_cmd_args(args)
-  args.collect{ |arg| "'#{arg}'"}.join(' ')
 end
 
 def gen_src_xib_strings
@@ -185,20 +201,40 @@ def gen_src_xib_strings
   end
 end
 
-def init_dst_code_strings_files
-  status "BOOTSTRAPPING LOCALIZED STRINGS FILES FOR THE TARGET LANGUAGES"
-  src_code_strings_files.each do |src_file|
-    dst_lproj_dirs.each do |dst_lproj_dir|
-      dst_file = File.join(dst_lproj_dir, File.split(src_file).last)
-      FileUtils.cp(src_file, dst_file, :preserve => true, :verbose => true)
+def merge_strings_at_into(src_strings, dst_strings)
+  targets = dst_strings.is_a?(String) ? [dst_strings] : dst_strings
+  targets.each do |target|
+    status "MERGING STRINGS AT '#{src_strings}' INTO '#{target}'"
+    FileUtils.touch target
+    rc = exe "wincent-strings-util --base '#{src_strings}' --merge '#{target}' --output '#{target}'"
+    error "Failed to merge '#{src_strings}' into '#{target}'" unless rc
+  end
+end
+
+def extract_untranslated_src_code_strings
+  tmp_strings_file = File.join($config['tmp_dir'], 'Localizable.strings')
+  $config['languages'].sort.each do |lang| 
+    src_file = File.join(lproj_dir_for_lang(lang), 'Localizable.strings')
+    dst_file = File.join(tmp_lproj_dir_for_lang(lang), 'Localizable.strings')
+    status "EXTRACTING UNTRANSLATED STRINGS FROM '#{src_file}' TO '#{dst_file}'"
+    rc = exe "wincent-strings-util --base '#{tmp_strings_file}' --extract '#{src_file}' --output '#{dst_file}'"
+    error "Failed to extract untranslated string from '#{src_file}' into '#{dst_file}' based on '#{tmp_strings_file}'" unless rc
+  end
+end
+
+def pack_tmp_lproj
+  FileUtils.mkdir_p File.join($config['tmp_dir'], 'zips'), :verbose => true
+  $config['languages'].sort.each do |lang| 
+    status "PACKING RESOURCES FOR '#{lang}'"    
+    FileUtils.cd(tmp_lproj_dir_for_lang(lang), :verbose => true) do |dir|
+      rc = exe "zip -r -9 -y '../zips/#{$config['zip_prefix']}_l10n_#{lang}_#{Time.now.strftime('%Y%m%d_%H%M')}.zip' *"
+      error "Failed to pack resources for '#{lang}'" unless rc
     end
   end
 end
 
-def merge_strings_at_into(src_strings, dst_strings)
-  status "MERGING STRINGS AT '#{src_strings}' INTO '#{dst_strings}'"
-  rc = exe "wincent-strings-util --base '#{src_strings}' --merge '#{dst_strings}' --output '#{dst_strings}'"
-  error "Failed to merge '#{src_strings}' into '#{dst_strings}'" unless rc
+def push_tmp_lproj
+  FileUtils.mv Dir.glob(File.join($config['tmp_dir'], 'zips', '*.zip')), $config['products_folder'], :verbose => true
 end
 
 main
