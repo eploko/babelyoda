@@ -16,11 +16,13 @@ def main
   check_args
   setup
   print_config
-  
   prepare_folders
-  
-  eval $config['action']
-
+  init_lproj_dirs
+  gen_src_code_strings
+  extract_untranslated_src_code_strings
+  gen_src_xib_strings
+  pack_tmp_lproj
+  push_tmp_lproj
   # FileUtils.rm_rf $config['tmp_dir'], :verbose => true
   success "All done!"
 end
@@ -157,18 +159,6 @@ def prepare_folders
   FileUtils.mkdir_p $config['old_xibs_dir'], :verbose => true
   FileUtils.mkdir_p File.join($config['tmp_dir'], 'zips'), :verbose => true
   make_tmp_lproj_dirs
-end
-
-def push
-  init_lproj_dirs
-  gen_src_code_strings
-  extract_untranslated_src_code_strings
-  gen_src_xib_strings
-  pack_tmp_lproj
-  push_tmp_lproj
-end
-
-def pull
 end
 
 def make_tmp_lproj_dirs
