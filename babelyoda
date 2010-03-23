@@ -153,7 +153,8 @@ end
 
 def prepare_folders
   status "PREPARING FOLDERS"
-  FileUtils.mkdir_p ['.babelyoda/translations', '.babelyoda/xibs'], :verbose => true
+  FileUtils.mkdir_p $config['inbound_translations_dir'], :verbose => true
+  FileUtils.mkdir_p $config['old_xibs_dir'], :verbose => true
   FileUtils.mkdir_p File.join($config['tmp_dir'], 'zips'), :verbose => true
   make_tmp_lproj_dirs
 end
@@ -176,7 +177,7 @@ def make_tmp_lproj_dirs
 end
 
 def init_lproj_dirs
-  status "PREPARING LPROJ DIRECTORIES"
+  status "PREPARING LPROJ FOLDERS"
   if File.exists?($config['initial_strings_file']) && File.exists?($config['src_lang_code_strings_file'])
     error "Both '#{$config['initial_strings_file']}' and '#{$config['src_lang_code_strings_file']}' exist!"
   end
@@ -254,12 +255,12 @@ end
 
 # Generates a mangled filename for the given file and language.
 def mangled_name(file, lang)
-  "#{$config['prefix']}_#{lang}_#{$config['time_badge']}_#{file}"
+  "#{$config['prefix']}_#{$config['time_badge']}_#{lang}_#{file}"
 end
 
 # Genarates ZIP file name for the given language
 def zipname_for_lang(lang)
-  "#{$config['prefix']}_l10n_#{lang}_#{$config['time_badge']}.zip"
+  "#{$config['prefix']}_#{$config['time_badge']}_#{lang}_Localization.zip"
 end
 
 main
