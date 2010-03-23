@@ -36,9 +36,8 @@ end
 
 def usage 
   puts ""
-  puts "Usage: babelyoda <action> [<rules.babelyoda>]"
+  puts "Usage: babelyoda [<rules.babelyoda>]"
   puts ""
-  puts "<action>          = push | pull"
   puts "<rules.babelyoda> = babel yoda config file, default is rules.babelyoda"   
 end
 
@@ -58,11 +57,10 @@ def setup
   $config = Hash.new
   global_config_filename = File.expand_path('~/.babelyoda')
   $config.merge!(YAML.load_file(global_config_filename)) if File.exist?(global_config_filename)
-  config = YAML.load_file(ARGV[1].nil? ? 'rules.babelyoda' : ARGV[1])
+  config = YAML.load_file(ARGV[0].nil? ? 'rules.babelyoda' : ARGV[0])
   config['tmp_dir'] = File.join Dir.tmpdir, "epl.babelyoda.#{$$}"
   config['src_dir'] = File.join config['tmp_dir'], 'src'
   config['startwd'] = Dir.getwd
-  config['action'] = ARGV[0]
   config['src_lang'] = Plist::parse_xml(config['plist'])['CFBundleDevelopmentRegion']
   config['src_lang_lproj'] = config['src_lang'] + '.lproj'
   config['src_lang_lproj_dir'] = File.join(config['target_dir'], config['src_lang_lproj'])
