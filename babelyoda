@@ -18,12 +18,13 @@ def main
   print_config
   prepare_folders
   init_lproj_dirs
+  apply_incremental_translations
   gen_src_code_strings
   extract_untranslated_src_code_strings
   gen_src_xib_strings
   pack_tmp_lproj
   push_tmp_lproj
-  # FileUtils.rm_rf $config['tmp_dir'], :verbose => true
+  FileUtils.rm_rf $config['tmp_dir'], :verbose => true
   success "All done!"
 end
 
@@ -58,47 +59,27 @@ def setup
   config['startwd'] = Dir.getwd
   config['src_lang'] = Plist::parse_xml(config['plist'])['CFBundleDevelopmentRegion']
   config['src_lang_lproj'] = config['src_lang'] + '.lproj'
-  config['src_lang_lproj_dir'] = File.join(config['target_dir'], config['src_lang_lproj'])
+  config['src_lang_lproj_dir'] = File.join(config['strings_folder'], config['src_lang_lproj'])
   config['src_lang_code_strings_file'] = File.join(config['src_lang_lproj_dir'], 'Localizable.strings')
-  config['initial_strings_file'] = File.join(config['target_dir'], 'Localizable.strings')
+  config['initial_strings_file'] = File.join(config['strings_folder'], 'Localizable.strings')
   $config.merge!(config)
   $config['products_folder'] = File.expand_path($config['products_folder'])
-  $config['time_badge'] = Time.now.strftime('%Y%m%d_%H%M')
+  $config['time_badge'] = Time.now.utc.strftime('%Y%m%d_%H%M')
 end
 
-def print_config
-  # Print out settings
-  status "CONFIG"
-  y $config
-end
-
-def exe(cmd)
-  putcmd cmd
-  system cmd
-end
-
-def putcmd(cmd)
-  print magenta, "CMD: #{cmd}", reset, "\n"  
-end
-
-def status(msg)
-  print blue, "--- #{msg} ---", reset, "\n"  
-end
-
-def error(msg)
-  print red, bold, 'ERROR: ', msg, reset, "\n"
-  exit 1
-end
-
-def success(msg)
-  print green, bold, 'SUCCESS: ', msg, reset, "\n"
-end
-
-def escape_cmd_args(args)
-  args.collect{ |arg| "'#{arg}'"}.join(' ')
-end
+def print_config ; status "CONFIG" ; y $config ; end
+def exe(cmd) ; putcmd cmd ; system cmd ; end
+def putcmd(cmd) ; print magenta, "CMD: #{cmd}", reset, "\n" ; end
+def status(msg) ; print blue, "--- #{msg} ---", reset, "\n" ; end
+def success(msg) ; print green, bold, 'SUCCESS: ', msg, reset, "\n" ; end
+def error(msg) ; print red, bold, 'ERROR: ', msg, reset, "\n" ; exit 1 ; end
+def escape_cmd_args(args) ; args.collect{ |arg| "'#{arg}'"}.join(' ') ; end
 
 # Globbers
+
+def all_languages
+  ($config['languages'] << $config['src_lang']).sort!
+end
 
 def all_lproj_dirs
   (dst_lproj_dirs << src_lproj_dir).sort
@@ -111,11 +92,11 @@ end
 def dst_lproj_dirs
   $config['languages'].collect{ |l| 
     lproj_dir_for_lang(l) 
-  }.sort
+  }.sort!
 end
 
 def lproj_dir_for_lang(lang)
-  File.join($config['target_dir'], "#{lang}.lproj")
+  File.join($config['strings_folder'], "#{lang}.lproj")
 end
 
 def tmp_lproj_dir_for_lang(lang)
@@ -123,33 +104,50 @@ def tmp_lproj_dir_for_lang(lang)
 end
 
 def src_code_files
-  $config['code_dirs'].collect{ |dir|
+  $config['folders'].collect{ |dir|
     Dir.glob(File.join(dir, '**', '*.{c,h,m,hh,mm}'))
-  }.flatten!.sort
+  }.flatten!.sort!
 end
 
 def dst_code_strings_files
   $config['languages'].collect{ |l| 
     File.join(lproj_dir_for_lang(l), 'Localizable.strings')
-  }.sort
+  }.sort!
 end
 
 def all_code_strings_files
-  (dst_code_strings_files << $config['src_lang_code_strings_file']).sort
+  (dst_code_strings_files << $config['src_lang_code_strings_file']).sort!
 end
 
 def src_xib_files
-  $config['xib_dirs'].collect{ |dir| 
+  $config['folders'].collect{ |dir| 
     Dir.glob(File.join(dir, '**', $config['src_lang_lproj'], '*.xib')) 
-  }.flatten!.sort
+  }.flatten!.sort!
+end
+
+def strings_files_for_lang(lang)
+  $config['folders'].collect{ |dir| 
+    Dir.glob(File.join(dir, '**', lang + '.lproj', '*.strings')) 
+  }.flatten!.sort!
+end
+
+def all_strings_files
+  all_languages.collect{ |lang| strings_files_for_lang(lang) }.flatten!.sort!
+end
+
+# Globs all incremental translations for the given .strings file and language.
+def incremental_translations(file, lang)
+  filename = File.split(file).last
+  mask = "#{$config['prefix']}_*_*_#{lang}_#{filename}"
+  Dir.glob(File.join($config['incremental_translations_folder'], mask)).sort! 
 end
 
 # Processing
 
 def prepare_folders
   status "PREPARING FOLDERS"
-  FileUtils.mkdir_p $config['inbound_translations_dir'], :verbose => true
-  FileUtils.mkdir_p $config['old_xibs_dir'], :verbose => true
+  FileUtils.mkdir_p $config['incremental_translations_folder'], :verbose => true
+  FileUtils.mkdir_p $config['old_xibs_folder'], :verbose => true
   FileUtils.mkdir_p File.join($config['tmp_dir'], 'zips'), :verbose => true
   make_tmp_lproj_dirs
 end
@@ -167,14 +165,28 @@ def init_lproj_dirs
   FileUtils.mkdir_p all_lproj_dirs, :verbose => true
 end
 
-# generate .strings file into the temporary directory
-# touch the target file so it's created if it didn't exist
-# and then merge it with the new file, preserving any translations made
+# Iterate over all the .strings files and apply
+# all the translations found for each in the 
+# incremental translations folder.
+def apply_incremental_translations
+  all_languages.each do |lang|
+    strings_files_for_lang(lang).each do |strings_file|
+      status "APPLYING INCREMENTAL TRANSLATIONS FOR '#{strings_file}'"
+      incremental_translations(strings_file, lang).each do |translation|
+        combine_strings(translation, strings_file)
+      end
+    end
+  end
+end
+
+# Generate .strings file into the temporary directory,
+# touch the target file so it's created if it didn't exist,
+# and then merge it with the new file, preserving any translations made.
 def gen_src_code_strings
   status "GENERATING STRINGS FILE FOR THE SOURCE LANGUAGE"
   genstrings src_code_files, $config['tmp_dir']
   tmp_strings_file = File.join($config['tmp_dir'], 'Localizable.strings')
-  merge_strings_at_into tmp_strings_file, all_code_strings_files
+  merge_strings tmp_strings_file, all_code_strings_files
 end
 
 def genstrings(files, output_path)
@@ -192,7 +204,7 @@ def gen_src_xib_strings
   end
 end
 
-def merge_strings_at_into(src_strings, dst_strings)
+def merge_strings(src_strings, dst_strings)
   targets = dst_strings.is_a?(String) ? [dst_strings] : dst_strings
   targets.each do |target|
     status "MERGING STRINGS AT '#{src_strings}' INTO '#{target}'"
@@ -213,6 +225,13 @@ def extract_untranslated_src_code_strings
   end
 end
 
+def combine_strings(incremental_strings, old_strings)
+  status "COMBINING STRINGS FROM '#{incremental_strings}' INTO '#{old_strings}'"
+  FileUtils.touch old_strings
+  rc = exe "wincent-strings-util --base '#{old_strings}' --combine '#{incremental_strings}' --output '#{old_strings}'"
+  error "Failed to combine '#{incremental_strings}' into '#{old_strings}'" unless rc
+end
+
 def pack_tmp_lproj
   # Copy the source language Localizable.strings into the temporary lproj folder.
   status "COPYING STRINGS FILE FOR '#{$config['src_lang']}'"
@@ -221,7 +240,6 @@ def pack_tmp_lproj
                :verbose => true
                
   # Pack all the temporary lproj folders.
-  all_languages = $config['languages'] << $config['src_lang']
   all_languages.sort.each do |lang| 
     status "PACKING RESOURCES FOR '#{lang}'"    
     FileUtils.cd(tmp_lproj_dir_for_lang(lang), :verbose => true) do |dir|
