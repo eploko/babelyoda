@@ -22,6 +22,8 @@ def main
   gen_src_code_strings
   extract_untranslated_src_code_strings
   gen_src_xib_strings
+  extract_untranslated_src_xib_strings
+  localize_xibs_incrementally
   pack_tmp_lproj
   push_tmp_lproj
   FileUtils.rm_rf $config['tmp_dir'], :verbose => true
@@ -128,10 +130,20 @@ def all_code_strings_files
   result.flatten!.sort!
 end
 
-def src_xib_files
+def xib_files_for_lang(lang)
   $config['folders'].collect{ |dir| 
-    Dir.glob(File.join(dir, '**', $config['src_lang_lproj'], '*.xib')) 
+    Dir.glob(File.join(dir, '**', lang + '.lproj', '*.xib')) 
   }.flatten!.sort!
+end
+
+def dst_xib_files
+  $config['languages'].collect{ |lang| 
+    xib_files_for_lang(lang)
+  }.flatten!.sort!
+end
+
+def src_xib_files
+  xib_files_for_lang($config['src_lang_lproj'])
 end
 
 def strings_files_for_lang(lang)
@@ -142,6 +154,29 @@ end
 
 def all_strings_files
   all_languages.collect{ |lang| strings_files_for_lang(lang) }.flatten!.sort!
+end
+
+def strings_file_for_xib_lang(xib, lang)
+  parts = File.split(xib)
+  lang_split = File.split(parts[-2])
+  lang_split[-1] = lang + '.lproj'
+  parts[-2] = File.join(lang_split)
+  parts[-1] = parts[-1].slice(0, parts[-1].length - 4) + '.strings'
+  result = File.join(parts)
+  result
+end
+
+def xib_file_for_xib_lang(xib, lang)
+  xib_filename = File.split(xib).last
+  parts = File.split(xib)
+  lang_split = File.split(parts[-2])
+  lang_split[-1] = lang + '.lproj'
+  parts[-2] = File.join(lang_split)
+  File.join(parts)
+end
+
+def strings_files_for_xib(xib)
+  all_languages.each.collect { |lang| strings_file_for_xib_lang(xib, lang) }
 end
 
 # Globs all incremental translations for the given .strings file and language.
@@ -207,14 +242,27 @@ end
 def gen_src_xib_strings
   status "GENERATING STRINGS FILES FOR THE SOURCE LANGUAGE XIBS"
   src_xib_files.each do |xib|
-    strings = xib.slice(0, xib.length - 4) + '.strings'
-    rc = exe "ibtool --generate-strings-file '#{strings}' '#{xib}'"
-    error "Failed to generate strings for file '#{xib}'" unless rc
+    tmp_strings_file = gen_xib_strings xib
+    merge_strings tmp_strings_file, strings_files_for_xib(xib)
   end
+end
+
+def tmp_filename_for_xib_strings(xib)
+  xib_filename = File.split(xib).last
+  strings_filename = xib_filename.slice(0, xib.length - 4) + '.strings'
+  File.join($config['tmp_dir'], strings_filename)
+end
+
+def gen_xib_strings(xib)
+  strings = tmp_filename_for_xib_strings(xib)
+  rc = exe "ibtool --generate-strings-file '#{strings}' '#{xib}'"
+  error "Failed to generate strings for file '#{xib}'" unless rc
+  strings
 end
 
 def merge_strings(src_strings, dst_strings)
   targets = dst_strings.is_a?(String) ? [dst_strings] : dst_strings
+  puts "DST_STRINGS: #{dst_strings}"
   targets.each do |target|
     status "MERGING STRINGS AT '#{src_strings}' INTO '#{target}'"
     FileUtils.touch target
@@ -234,6 +282,21 @@ def extract_untranslated_src_code_strings
   end
 end
 
+def extract_untranslated_src_xib_strings
+  src_xib_files.each do |xib|
+    tmp_strings_file = tmp_filename_for_xib_strings(xib)
+    $config['languages'].sort.each do |lang| 
+      src_file = strings_file_for_xib_lang(xib, lang)
+      src_filename = File.split(src_file).last
+      dst_file = File.join(tmp_lproj_dir_for_lang(lang), mangled_name(src_filename, lang))
+
+      status "EXTRACTING UNTRANSLATED STRINGS FROM '#{src_file}' TO '#{dst_file}'"
+      rc = exe "wincent-strings-util --base '#{tmp_strings_file}' --extract '#{src_file}' --output '#{dst_file}'"
+      error "Failed to extract untranslated string from '#{src_file}' into '#{dst_file}' based on '#{tmp_strings_file}'" unless rc
+    end
+  end
+end
+
 def combine_strings(incremental_strings, old_strings)
   status "COMBINING STRINGS FROM '#{incremental_strings}' INTO '#{old_strings}'"
   FileUtils.touch old_strings
@@ -247,6 +310,13 @@ def pack_tmp_lproj
   FileUtils.cp $config['src_lang_code_strings_file'], 
                File.join(tmp_lproj_dir_for_lang($config['src_lang']), mangled_name('Localizable.strings', $config['src_lang'])), 
                :verbose => true
+  src_xib_files.each do |xib|
+    strings = strings_file_for_xib_lang(xib, $config['src_lang'])
+    strings_filename = File.split(strings).last
+    FileUtils.cp strings, 
+                 File.join(tmp_lproj_dir_for_lang($config['src_lang']), mangled_name(strings_filename, $config['src_lang'])), 
+                 :verbose => true
+  end
                
   # Pack all the temporary lproj folders.
   all_languages.sort.each do |lang| 
@@ -271,6 +341,63 @@ end
 # Genarates ZIP file name for the given language
 def zipname_for_lang(lang)
   "#{$config['prefix']}_#{$config['time_badge']}_#{lang}_Localization.zip"
+end
+
+def localize_xibs_incrementally
+  # ibtool
+  #   --previous-file path_to_project/English.lproj/MainWindow.old.xib          # old_dst_xib
+  #   --incremental-file path_to_project/fr.lproj/MainWindow.old.xib            # old_src_xib
+  #   --strings-file path_to_strings/fr/MainWindow.strings                      # dst_strings
+  #   --localize-incremental
+  #   --write path_to_project/fr.lproj/MainWindow.xib                           # dst_xib
+  #   path_to_project/English.lproj/MainWindow.new.xib                          # src_xib
+  
+  $config['languages'].sort.each do |lang|
+    puts "XIB-LANG: #{lang}"
+    xib_files_for_lang(lang).each do |dst_xib|
+      puts "XIB-DST: #{dst_xib}"
+      dst_strings = dst_xib.slice(0, dst_xib.length - 4) + '.strings'
+      src_xib = xib_file_for_xib_lang(dst_xib, $config['src_lang'])
+      old_src_xib = old_xib_for_xib_lang(src_xib, $config['src_lang'])
+      FileUtils.cp src_xib, old_src_xib, :preserve => true, :verbose => true
+      FileUtils.cp src_xib, dst_xib, :preserve => true, :verbose => true
+      old_dst_xib = old_xib_for_xib_lang(dst_xib, lang)
+      FileUtils.cp dst_xib, old_dst_xib, :preserve => true, :verbose => true
+      
+      ncmd = ['ibtool', '--previous-file', "'#{old_dst_xib}'",
+             '--incremental-file', "'#{old_src_xib}'",
+             '--strings-file', "'#{dst_strings}'",
+             '--localize-incremental',
+             '--write', "#{dst_xib}",
+             "#{src_xib}"].join(' ')
+       puts "XIB-CMD: #{ncmd}"
+      rc = exe ncmd 
+      error "Failed to localize a XIB incrementally" unless rc
+    end
+  end
+end
+
+def xib_file_for_xib_lang(xib, lang)
+  xib_filename = File.split(xib).last
+  parts = File.split(xib)
+  lang_split = File.split(parts[-2])
+  lang_split[-1] = lang + '.lproj'
+  parts[-2] = File.join(lang_split)
+  result = File.join(parts)
+  unless lang == $config['src_lang']
+    FileUtils.cp xib_file_for_xib_lang(xib, $config['src_lang']),
+                 result, :preserve => true, :verbose => true
+  end
+  result
+end
+
+def mangled_old_xib_name(xib, lang)
+  file = File.split(xib).last
+  File.join($config['old_xibs_folder'], "#{$config['prefix']}_OLD_#{lang}_#{file}")
+end
+
+def old_xib_for_xib_lang(xib, lang)
+  mangled_old_xib_filename = mangled_old_xib_name(xib, lang)
 end
 
 main
