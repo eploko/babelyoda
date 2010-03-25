@@ -78,11 +78,17 @@ def escape_cmd_args(args) ; args.collect{ |arg| "'#{arg}'"}.join(' ') ; end
 # Globbers
 
 def all_languages
-  ($config['languages'] << $config['src_lang']).sort!
+  result = Array.new
+  result << $config['languages']
+  result << $config['src_lang']
+  result.flatten!.sort!
 end
 
 def all_lproj_dirs
-  (dst_lproj_dirs << src_lproj_dir).sort
+  result = Array.new
+  result << dst_lproj_dirs
+  result << src_lproj_dir
+  result.flatten!.sort!
 end
 
 def src_lproj_dir
@@ -116,7 +122,10 @@ def dst_code_strings_files
 end
 
 def all_code_strings_files
-  (dst_code_strings_files << $config['src_lang_code_strings_file']).sort!
+  result = Array.new
+  result << dst_code_strings_files
+  result << $config['src_lang_code_strings_file']
+  result.flatten!.sort!
 end
 
 def src_xib_files
