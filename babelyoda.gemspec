@@ -23,8 +23,9 @@ Gem::Specification.new do |s|
      "LICENSE",
      "README.rdoc",
      "VERSION",
-     "bin/babelyoda",
-     "lib/babelyoda/options.rb"
+     "data/empty.strings",
+     "lib/babelyoda/options.rb",
+     "lib/babelyoda/strings.rb"
   ]
   s.homepage = %q{http://github.com/eploko/babelyoda}
   s.rdoc_options = ["--charset=UTF-8"]

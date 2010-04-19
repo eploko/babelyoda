@@ -9,6 +9,7 @@ require 'yaml'
 include Term::ANSIColor
 
 require 'babelyoda/options'
+require 'babelyoda/strings'
 
 # Main block
 
@@ -216,6 +217,8 @@ def genstrings(files, output_path)
   files_safe = escape_cmd_args(files)
   rc = exe "genstrings -o '#{output_path}' #{files_safe}"
   error "Failed to generate strings" unless rc
+  strings_file = File.join(output_path, 'Localizable.strings')
+  BabelYoda::StringsHelper.safe_init_strings_file strings_file
 end
 
 def gen_src_xib_strings
@@ -236,6 +239,7 @@ def gen_xib_strings(xib)
   strings = tmp_filename_for_xib_strings(xib)
   rc = exe "ibtool --generate-strings-file '#{strings}' '#{xib}'"
   error "Failed to generate strings for file '#{xib}'" unless rc
+  BabelYoda::StringsHelper.safe_init_strings_file strings
   strings
 end
 
@@ -244,9 +248,13 @@ def merge_strings(src_strings, dst_strings)
   puts "DST_STRINGS: #{dst_strings}"
   targets.each do |target|
     status "MERGING STRINGS AT '#{src_strings}' INTO '#{target}'"
-    FileUtils.touch target
-    rc = exe "wincent-strings-util --base '#{src_strings}' --merge '#{target}' --output '#{target}'"
-    error "Failed to merge '#{src_strings}' into '#{target}'" unless rc
+    FileUtils.mkdir_p File.split(target)[0], :verbose => true
+    if File.exists? target
+      rc = exe "wincent-strings-util --base '#{src_strings}' --merge '#{target}' --output '#{target}'"
+      error "Failed to merge '#{src_strings}' into '#{target}'" unless rc
+    else
+      FileUtils.cp src_strings, target, :verbose => true
+    end
   end
 end
 
@@ -342,6 +350,8 @@ def localize_xibs_incrementally
       FileUtils.cp src_xib, dst_xib, :preserve => true, :verbose => true
       old_dst_xib = old_xib_for_xib_lang(dst_xib, lang)
       FileUtils.cp dst_xib, old_dst_xib, :preserve => true, :verbose => true
+
+      BabelYoda::StringsHelper.safe_init_strings_file dst_strings
       
       ncmd = ['ibtool', '--previous-file', "'#{old_dst_xib}'",
              '--incremental-file', "'#{old_src_xib}'",
@@ -349,7 +359,6 @@ def localize_xibs_incrementally
              '--localize-incremental',
              '--write', "#{dst_xib}",
              "#{src_xib}"].join(' ')
-       puts "XIB-CMD: #{ncmd}"
       rc = exe ncmd 
       error "Failed to localize a XIB incrementally" unless rc
     end

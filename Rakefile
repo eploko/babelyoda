@@ -10,7 +10,7 @@ begin
     gem.email = "andrey@subbotin.me"
     gem.homepage = "http://github.com/eploko/babelyoda"
     gem.authors = ["Andrey Subbotin"]
-    gem.files =  FileList["[A-Z][A-Z]*", "bin/*", "lib/**/*"]
+    gem.files =  FileList["[A-Z][A-Z]*", "{lib,data}/**/*"]
     gem.executables = ['babelyoda']
     gem.default_executable = ['babelyoda']
     gem.add_dependency "plist"
