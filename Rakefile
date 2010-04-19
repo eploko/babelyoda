@@ -13,7 +13,8 @@ begin
     gem.files =  FileList["[A-Z][A-Z]*", "bin/*", "lib/**/*"]
     gem.executables = ['babelyoda']
     gem.default_executable = ['babelyoda']
-    #gem.add_development_dependency "thoughtbot-shoulda", ">= 0"
+    gem.add_dependency "plist"
+    gem.add_dependency "term-ansicolor"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::GemcutterTasks.new

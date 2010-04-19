@@ -33,7 +33,7 @@ end
 # Aux methods
 
 def banner
-  puts "Babel Yoda v1.0"
+  puts "Babel Yoda v1.2.0"
   puts "© 2010 Andrey Subbotin <andrey@subbotin.me>"
 end
 
