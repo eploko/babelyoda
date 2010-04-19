@@ -1,6 +1,6 @@
 = babelyoda
 
-Description goes here.
+A simple utility to push/pull l10n resources of an iPhone project to/from the translators.
 
 == Note on Patches/Pull Requests
  
