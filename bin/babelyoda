@@ -123,7 +123,7 @@ def dst_xib_files
 end
 
 def src_xib_files
-  xib_files_for_lang($config['src_lang_lproj'])
+  xib_files_for_lang($config['src_lang'])
 end
 
 def strings_files_for_lang(lang)
