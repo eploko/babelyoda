@@ -297,6 +297,7 @@ def pack_tmp_lproj
   FileUtils.cp $config['src_lang_code_strings_file'], 
                File.join(tmp_lproj_dir_for_lang($config['src_lang']), mangled_name('Localizable.strings', $config['src_lang'])), 
                :verbose => true
+               
   src_xib_files.each do |xib|
     strings = strings_file_for_xib_lang(xib, $config['src_lang'])
     strings_filename = File.split(strings).last
@@ -309,6 +310,12 @@ def pack_tmp_lproj
   all_languages.sort.each do |lang| 
     status "PACKING RESOURCES FOR '#{lang}'"    
     FileUtils.cd(tmp_lproj_dir_for_lang(lang), :verbose => true) do |dir|
+      
+      # Get rid of empty files
+      Dir.glob(File.join(dir, '**', '*.strings')).flatten.sort.each do |tmp_strings_file|
+        FileUtils.rm_rf(tmp_strings_file, :verbose => true) unless File.size?(tmp_strings_file) > 2
+      end
+      
       rc = exe "zip -r -9 -y '../zips/#{zipname_for_lang(lang)}' *"
       error "Failed to pack resources for '#{lang}'" unless rc
     end
