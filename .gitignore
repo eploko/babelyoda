@@ -1,3 +1,5 @@
-babelyoda.tmproj
-pkg
-
+.rvmrc
+*.gem
+.bundle
+Gemfile.lock
+pkg/*
