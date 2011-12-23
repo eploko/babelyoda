@@ -1,0 +1,9 @@
+Babelyoda::Specification.new do |s|
+	s.name = '<%= config[:name] %>'
+	s.development_language = :en
+	s.localization_languages = [:ru, :uk, :tr]
+	s.engine = Babelyoda::Engine::Tanker.new do |t|
+		t.token = 'FIX: TANKER TOKEN HERE'
+		t.project_id = 'FIX: TANKER PROJECT ID HERE'
+	end
+end

@@ -1,5 +1,3 @@
-require "babelyoda/version"
+require 'babelyoda/version'
+require 'babelyoda/cli'
 
-module Babelyoda
-  # Your code goes here...
-end
