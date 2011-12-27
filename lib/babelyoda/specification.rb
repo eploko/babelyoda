@@ -10,7 +10,7 @@ module Babelyoda
     attr_accessor :development_language
     attr_accessor :localization_languages
     attr_accessor :engine
-    attr_accessor :source_files
+    attr_accessor :source_files    
     attr_accessor :resources_folder
     
     FILENAME = 'Babelfile'

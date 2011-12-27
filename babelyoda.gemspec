@@ -20,7 +20,7 @@ Gem::Specification.new do |s|
 
   # specify any dependencies here; for example:
   s.add_development_dependency "rspec"
-  s.add_runtime_dependency "thor"
   s.add_runtime_dependency "awesome_print"
   s.add_runtime_dependency "rake"
+  s.add_runtime_dependency "aasm"
 end

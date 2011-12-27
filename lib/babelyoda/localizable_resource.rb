@@ -29,8 +29,16 @@ module Babelyoda
       [self.development_language, *self.localization_languages]
     end
     
-    def uptodate?(src_files)
+    def up_to_date?(src_files)
       FileUtils.uptodate?(development_localization_filename, src_files)
+    end
+    
+    def to_s
+      result = File.join(self.folder, self.name)
+      if existing_localizations.size 
+        result += " [" + existing_localizations.join(', ') + "]"
+      end
+      return result
     end
   end
 end

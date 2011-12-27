@@ -19,7 +19,7 @@ module Babelyoda
     def dump
     	ap self, :indent => -2
     end
-
+    
     module ClassMethods
 
 		  def load_from_file(filename)
@@ -28,7 +28,7 @@ module Babelyoda
 		    raise "Wrong specification class: #{spec.class.to_s}" unless spec.instance_of?(self)
 		    return spec
 		  end
-
+		  
     end
 
 	end
