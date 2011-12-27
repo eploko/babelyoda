@@ -35,13 +35,13 @@ module Babelyoda
       
       def produce(bs)
         match_bs(bs, :multiline_comment, :string, :equal_sign, :string, :semicolon) do |bits|
-          return Record.new(bits[0], bits[1], bits[3])
+          return Record.new(cleanup_comment(bits[0]), cleanup_string(bits[1]), cleanup_string(bits[3]))
         end
         match_bs(bs, :singleline_comment, :string, :equal_sign, :string, :semicolon) do |bits|
-          return Record.new(bits[0], bits[1], bits[3])
+          return Record.new(cleanup_comment(bits[0]), cleanup_string(bits[1]), cleanup_string(bits[3]))
         end
         match_bs(bs, :string, :equal_sign, :string, :semicolon) do |bits|
-          return Record.new(nil, bits[0], bits[2])
+          return Record.new(nil, cleanup_string(bits[0]), cleanup_string(bits[2]))
         end
         match_bs(bs, :singleline_comment) do |bits|
           return nil
@@ -64,31 +64,20 @@ module Babelyoda
         @record = Record.new
       end
       
-      def emit_comment
-        if @token == :singleline_comment
-          @value.sub!(/^\/\/\s*/, '')
-        elsif @token == :multiline_comment
-          @value.sub!(/^\/\*\s*/, '').sub!(/\s*\*\/$/, '')
+      def cleanup_comment(str)
+        if str.match(/^\/\/\s*/)
+          str.sub(/^\/\/\s*/, '')
+        else
+          str.sub(/^\/\*\s*/, '').sub(/\s*\*\/$/, '')
         end
-        @record[:comment] = @value
       end
       
-      def emit_key
-        @value.sub!(/^\"/, '')
-        @value.sub!(/\"$/, '')
-        @record[:key] = @value        
-      end
-      
-      def emit_value
-        @value.sub!(/^\"/, '').sub!(/\"$/, '')
-        @record[:value] = @value        
-      end
-      
-      def emit_record
-        @block.call(@record)
-        @record = nil
+      def cleanup_string(str)
+        str.sub(/^\"/, '').sub(/\"$/, '')
       end
     end
+    
+    attr_reader :records
     
     def initialize
       @records = {}
@@ -113,8 +102,30 @@ module Babelyoda
       end        
     end
     
+    def write(fn)
+      FileUtils.mkdir_p(File.dirname(fn), :verbose => true)
+      File.open(fn, "w") do |f|
+        @records.each_pair do |key, record|
+          f << "/* #{record[:comment]} */\n" if record[:comment]
+          f << "\"#{record[:key]}\" = \"#{record[:value]}\";\n"
+          f << "\n"
+        end
+      end
+      puts "WRITTEN: #{fn}"
+    end
+    
     def size
       @records.size
+    end
+    
+    def keys
+      @records.keys
+    end
+    
+    def <<(other_strings)
+      other_strings.records.each_pair do |key, value|
+        @records[key] = value
+      end
     end
   end
 end

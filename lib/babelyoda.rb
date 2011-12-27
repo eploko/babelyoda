@@ -18,7 +18,7 @@ namespace :babelyoda do
   
   Babelyoda::Rake.spec do |spec|
     
-    STRINGS_FILE = Babelyoda::StringsFile.new(spec.resources_folder, 'Localizable.strings', spec.development_language)
+    STRINGS_FILE = Babelyoda::StringsFile.read(spec.resources_folder, 'Localizable.strings', spec.development_language)
     STRINGS_FILE.localization_languages.push(*spec.localization_languages)
     DEV_LOCALIZATION_STRINGS_FILENAME = STRINGS_FILE.development_localization_filename
     
