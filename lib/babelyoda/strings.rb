@@ -90,21 +90,29 @@ module Babelyoda
     end
     
     def read(fn)
-      lexer = Lexer.new
-      parser = Parser.new(lexer)
-      parser.parse(File.read(fn)) do |record|
-        # puts "RECORD: #{record}"
-        if @records.has_key?(record[:key])
-          puts "WARNING: Duplicate key '#{record[:key]}', dupe spotted in '#{fn}'"
-        else
-          @records[record[:key]] = record
+      File.open(fn, "rb:UTF-16LE:UTF-8") do |file|
+        dupes = {}
+        lexer = Lexer.new
+        parser = Parser.new(lexer)
+        parser.parse(file.read) do |record|
+          if @records.has_key?(record[:key]) && @records[record[:key]][:comment] != record[:comment]
+            unless dupes[record[:key]]
+              dupes[record[:key]] = [ @records[record[:key]][:comment] ]
+            end
+            dupes[record[:key]] << record[:comment]
+          else
+            @records[record[:key]] = record
+          end
+        end        
+        dupes.each_pair do |key, comments|
+          puts "Warning: Key \"#{key}\" used with multiple comments #{comments.map{|c| "\"#{c}\""}.join(' & ')}"
         end
-      end        
+      end
     end
     
     def write(fn)
       FileUtils.mkdir_p(File.dirname(fn), :verbose => true)
-      File.open(fn, "w") do |f|
+      File.open(fn, "wb:UTF-16LE:UTF-8") do |f|
         @records.each_pair do |key, record|
           f << "/* #{record[:comment]} */\n" if record[:comment]
           f << "\"#{record[:key]}\" = \"#{record[:value]}\";\n"
