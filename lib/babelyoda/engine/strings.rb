@@ -8,13 +8,17 @@ module Babelyoda
 
       def load_keyset(name)
         keyset = Babelyoda::Keyset.new(name)
-        puts "Loading: #{name}"
-
         Dir.glob(strings_filename(name, '*')).each do |filename|
           keyset.strings[lang_from_filename(filename)] = Babelyoda::Strings.read(filename)
         end
-        
         return keyset
+      end
+
+      def save_keyset(keyset, langs = keyset.langs)
+        langs.each do |lang|
+          filename = strings_filename(keyset.name, lang)
+          keyset.strings[lang].write(filename)
+        end
       end
       
     private

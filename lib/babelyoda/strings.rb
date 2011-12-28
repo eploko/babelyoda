@@ -114,13 +114,9 @@ module Babelyoda
       puts "WRITTEN: #{fn}"
     end
     
-    def size
-      @records.size
-    end
+    def size ; @records.size ; end
     
-    def keys
-      @records.keys
-    end
+    def keys ; @records.keys ; end
     
     def merge!(strings)
       strings.records.each_pair do |key, value|
@@ -128,5 +124,7 @@ module Babelyoda
         @records[key] = value
       end
     end
+    
+    def [](key) ; @records[key] ; end
   end
 end

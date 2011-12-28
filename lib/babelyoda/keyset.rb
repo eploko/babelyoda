@@ -9,6 +9,7 @@ module Babelyoda
     end
     
     def merge!(keyset)
+      # puts "MERGE: #{name} << #{keyset.name}"
       keyset.strings.each_pair do |lang, strings|
         @strings[lang] = Babelyoda::Strings.new unless @strings.has_key?(lang)
         @strings[lang].merge!(strings)
