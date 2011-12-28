@@ -22,5 +22,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency "rspec"
   s.add_runtime_dependency "awesome_print"
   s.add_runtime_dependency "rake"
-  s.add_runtime_dependency "aasm"
+  s.add_runtime_dependency "active_support"
 end

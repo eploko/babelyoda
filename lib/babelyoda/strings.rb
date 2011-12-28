@@ -122,8 +122,9 @@ module Babelyoda
       @records.keys
     end
     
-    def <<(other_strings)
-      other_strings.records.each_pair do |key, value|
+    def merge!(strings)
+      strings.records.each_pair do |key, value|
+        puts "WARNING: Key '#{key}' has been overwritten while merging." if @records.has_key?(key)
         @records[key] = value
       end
     end

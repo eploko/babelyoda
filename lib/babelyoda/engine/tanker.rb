@@ -1,8 +1,10 @@
 require 'babelyoda/specification_loader'
 
+require_relative 'base'
+
 module Babelyoda
 	module Engine
-		class Tanker
+		class Tanker < Base
 			include Babelyoda::SpecificationLoader
 
 	    attr_accessor :token
