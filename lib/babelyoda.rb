@@ -32,7 +32,8 @@ namespace :babelyoda do
     task :push => :genstrings do
       Dir.glob(File.join(spec.resources_folder, "#{spec.development_language}.lproj", '*.strings')).each do |filename|
         puts "FILE TO PUSH: #{filename}"
-        # strings = Babelyoda::Strings.read(filename)
+        engine = Babelyoda::Engine::Strings.new
+        # strings = engine.load_strings(filename)
       end
     end
   
@@ -41,9 +42,8 @@ end
 
 def merge_to_previous_version(spec, lang, name, strings, opts = {})
   filename = strings_filename(spec, lang, name)
-  previous_version = Babelyoda::Strings.read(filename)
-
   engine = Babelyoda::Engine::Strings.new
+  previous_version = engine.load_strings(filename)
 
   if previous_version
     previous_version.merge!(strings, opts)

@@ -1,5 +1,6 @@
 require 'tmpdir'
 
+require 'babelyoda/engine'
 require 'babelyoda/strings'
 
 module Babelyoda
@@ -7,13 +8,18 @@ module Babelyoda
     class Genstrings
       def self.run(files = [])
         strings = {}
+        engine = Babelyoda::Engine::Strings.new
         files.each do |fn|
           Dir.mktmpdir do |dir|
             raise "ERROR: genstrings failed." unless Kernel.system("genstrings -littleEndian -o '#{dir}' '#{fn}'")
             Dir.glob(File.join(dir, '*.strings')).each do |strings_file|
-              basename = File.basename(strings_file, '.strings')
-              strings[basename] ||= Babelyoda::Strings.new
-              strings[basename].read(strings_file)
+              name = File.basename(strings_file, '.strings')
+              current_strings = engine.load_strings(strings_file)
+              if strings[name]
+                strings[name].merge!(current_strings)
+              else
+                strings[name] = current_strings
+              end
             end
           end
         end
