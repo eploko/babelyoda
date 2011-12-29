@@ -17,8 +17,20 @@ module Babelyoda
       def save_keyset(keyset, langs = keyset.langs)
         langs.each do |lang|
           filename = strings_filename(keyset.name, lang)
-          keyset.strings[lang].write(filename)
+          save_strings(keyset.strings[lang], filename)
         end
+      end
+      
+      def save_strings(strings, filename)
+        FileUtils.mkdir_p(File.dirname(filename))
+        File.open(filename, "wb") do |f|
+          strings.records.each_pair do |key, record|
+            f << "/* #{record[:comment]} */\n" if record[:comment]
+            f << "\"#{record[:key]}\" = \"#{record[:value]}\";\n"
+            f << "\n"
+          end
+        end
+        puts "WRITTEN: #{filename}"
       end
       
     private
@@ -30,7 +42,7 @@ module Babelyoda
       def lang_from_filename(filename)
         File.split(File.split(filename)[0])[1].match(/^(.*)\.lproj$/)[1].to_sym
       end
-      
+            
 		end
 	end
 end

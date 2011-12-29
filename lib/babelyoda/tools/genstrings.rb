@@ -17,7 +17,15 @@ module Babelyoda
             end
           end
         end
-        return strings
+        if block_given?
+          result = []
+          strings.each_pair do |name, item|
+            result << yield(name, item)
+          end
+          return result
+        else
+          return strings
+        end
       end
     end
   end

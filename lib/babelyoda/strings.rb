@@ -1,3 +1,5 @@
+require 'rchardet19'
+
 module Babelyoda
   class Strings
     Record = Struct.new(:comment, :key, :value)
@@ -86,11 +88,16 @@ module Babelyoda
     def self.read(fn)
       result = new
       result.read(fn)
-      return result
+      if block_given?
+        return yield(result)
+      else
+        return result
+      end
     end
     
     def read(fn)
-      File.open(fn, "rb:UTF-16LE:UTF-8") do |file|
+      return nil unless File.exist?(fn)
+      File.open(fn, read_mode_for_filename(fn)) do |file|
         dupes = {}
         lexer = Lexer.new
         parser = Parser.new(lexer)
@@ -110,29 +117,39 @@ module Babelyoda
       end
     end
     
-    def write(fn)
-      FileUtils.mkdir_p(File.dirname(fn), :verbose => true)
-      File.open(fn, "wb:UTF-16LE:UTF-8") do |f|
-        @records.each_pair do |key, record|
-          f << "/* #{record[:comment]} */\n" if record[:comment]
-          f << "\"#{record[:key]}\" = \"#{record[:value]}\";\n"
-          f << "\n"
-        end
-      end
-      puts "WRITTEN: #{fn}"
-    end
-    
     def size ; @records.size ; end
     
     def keys ; @records.keys ; end
     
-    def merge!(strings)
+    def merge!(strings, opts = {})
+      opts[:keep_values] = true unless opts.has_key?(:keep_values)
       strings.records.each_pair do |key, value|
-        puts "WARNING: Key '#{key}' has been overwritten while merging." if @records.has_key?(key)
-        @records[key] = value
+        if !@records.has_key?(key) || (@records.has_key?(key) && !opts[:keep_values])
+          @records[key] = value
+        end
       end
+      return self
     end
     
     def [](key) ; @records[key] ; end
+    
+    def purge_keys_not_in!(strings)
+      records_to_purge = @records.select { |key, value| !strings.records.has_key?(key) }
+      records_to_purge.keys.each { |key| @records.delete(key) }
+      return self
+    end
+    
+  private
+  
+    def read_mode_for_filename(fn)
+      cd = CharDet.detect(File.read(fn))
+      encoding_str = Encoding.aliases[cd.encoding] || cd.encoding
+      encoding_str = 'UTF-8' if encoding_str == 'utf-8'
+      if (encoding_str != "UTF-8")
+        "rb:#{encoding_str}:UTF-8"
+      else
+        "r"
+      end
+    end
   end
 end
