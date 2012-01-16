@@ -88,7 +88,7 @@ namespace :babelyoda do
 
     desc "Pull remote translations"
     task :pull do      
-      puts "Pulling remote transaltions..."
+      puts "Pulling remote translations..."
       Dir.glob(File.join(spec.resources_folder, "#{spec.development_language}.lproj", '*.strings')).each do |filename|
         keyset_name = File.basename(filename, '.strings')
         remote_keyset = spec.engine.load_keyset(keyset_name, nil, :unapproved, true)
