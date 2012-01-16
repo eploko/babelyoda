@@ -34,5 +34,9 @@ module Babelyoda
       File.expand_path(File.join(self.resources_folder, "#{language.to_s}.lproj", 'Localizable.strings'))
     end
     
+    def all_languages
+      [ development_language, localization_languages].flatten!
+    end
+    
   end
 end

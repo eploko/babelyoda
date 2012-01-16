@@ -2,7 +2,7 @@ Babelyoda::Specification.new do |s|
 	s.name = 'YOUR PROJECT NAME HERE'
 	s.development_language = :en
 	s.localization_languages = [:ru, :uk, :tr]
-	s.engine = Babelyoda::Engine::Tanker.new do |t|
+	s.engine = Babelyoda::Tanker.new do |t|
 		t.token = 'FIX: TANKER TOKEN HERE'
 		t.project_id = 'FIX: TANKER PROJECT ID HERE'
 	end
