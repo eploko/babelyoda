@@ -29,5 +29,9 @@ module Babelyoda
       records_to_purge.keys.each { |key| @records.delete(key) }
       return self
     end    
+    
+    def to_a
+      @records.keys.map { |k| @records[k] }
+    end
   end
 end

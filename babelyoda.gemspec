@@ -24,4 +24,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "rake"
   s.add_runtime_dependency "active_support"
   s.add_runtime_dependency "rchardet19"
+  s.add_runtime_dependency "builder"
+  s.add_runtime_dependency "nokogiri"
 end
