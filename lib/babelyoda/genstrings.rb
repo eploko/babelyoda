@@ -1,3 +1,4 @@
+require 'fileutils'
 require 'tmpdir'
 
 require_relative 'keyset'
@@ -12,9 +13,9 @@ module Babelyoda
           raise "ERROR: genstrings failed." unless Kernel.system("genstrings -littleEndian -o '#{dir}' '#{fn}'")
           Dir.glob(File.join(dir, '*.strings')).each do |strings_file|
             strings = Babelyoda::Strings.new(strings_file, language).read!
-            keyset_name = File.basename(strings_file, '.strings')
-            keysets[keyset_name] ||= Keyset.new(keyset_name)
-            keysets[keyset_name].merge!(strings)
+            strings.name = File.join('Resources', File.basename(strings.name))
+            keysets[strings.name] ||= Keyset.new(strings.name)
+            keysets[strings.name].merge!(strings)
           end
         end
       end

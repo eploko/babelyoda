@@ -3,12 +3,21 @@ module Babelyoda
     attr_accessor :name
     attr_accessor :keys
     
+    def self.keyset_name(filename)
+      raise ArgumentError.new("Invlaid filename for a .strings file: #{filename}") unless filename.match(/\.strings$/)
+      parts = File.join(File.dirname(filename), File.basename(filename, '.strings')).split('/')
+      parts.delete_if { |part| part.match(/\.lproj$/) }
+      File.join(parts)
+    end
+    
     def initialize(name)
       @name = name
       @keys = {}
     end
     
     def to_s ; "<#{self.class}: name = #{name}, keys.size = #{keys.size}>" ; end
+    
+    def empty? ; keys.size == 0 ; end
     
     def merge!(keyset, options = {})
       result = { :new => 0, :updated => 0 }

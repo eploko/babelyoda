@@ -10,7 +10,7 @@ module Babelyoda
 	  attr_reader :language
 	  
 	  def initialize(filename, language)
-	    super(File.basename(filename, '.strings'))
+	    super(Babelyoda::Keyset.keyset_name(filename))
 	    @filename, @language = filename, language
 	  end
 
