@@ -11,7 +11,7 @@ module Babelyoda
     end
     
     def <<(localization_value)
-      @values[localization_value.language.to_sym] = localization_value
+      @values[localization_value.language.to_sym] = localization_value.dup
       self
     end
     

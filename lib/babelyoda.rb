@@ -101,22 +101,24 @@ namespace :babelyoda do
         puts "    New keys: #{result[:new]} Updated keys: #{result[:updated]}"
       end
     end
-
-    desc "Pull remote translations"
-    task :pull do      
-      puts "Pulling remote translations..."
+    
+    desc "Fetches remote strings and merges them down into local .string files"
+    task :fetch_strings do
+      puts "Fetching remote translations..."
       spec.strings_files.each do |filename|
         keyset_name = Babelyoda::Keyset.keyset_name(filename)
         remote_keyset = spec.engine.load_keyset(keyset_name, nil, :unapproved, true)
         remote_keyset.drop_empty!
         spec.all_languages.each do |language|
           keyset_filename = strings_filename(keyset_name, language)
-          puts "SAVING TO: #{keyset_filename}"
-          next
           Babelyoda::Strings.save_keyset(remote_keyset, keyset_filename, language)
-          puts "  #{filename}"
+          puts "  #{keyset_filename}"
         end
       end
+    end
+
+    desc "Pull remote translations"
+    task :pull => :fetch_strings do      
     end
     
     namespace :remote do

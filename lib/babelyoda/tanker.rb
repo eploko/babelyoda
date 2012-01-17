@@ -67,9 +67,6 @@ module Babelyoda
         'keyset-id' => keyset.name,
         :format => 'xml'
       }
-      # TODO: Remove this when the tanker fixes this behavior
-      language ||= :en
-      
       payload.merge!({:language => language}) if language
       post('/keysets/replace/', payload)
     end
