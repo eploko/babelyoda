@@ -4,6 +4,8 @@ require 'awesome_print'
 
 require_relative 'babelyoda/genstrings'
 require_relative 'babelyoda/keyset'
+require_relative 'babelyoda/localization_key'
+require_relative 'babelyoda/localization_value'
 require_relative 'babelyoda/rake'
 require_relative 'babelyoda/specification'
 require_relative 'babelyoda/tanker'
@@ -106,6 +108,31 @@ namespace :babelyoda do
       desc "List remote keysets"
       task :list do
         ap spec.engine.list
+      end
+      
+      desc "Drop remote keysets in KEYSETS"
+      task :drop_keysets do
+        if ENV['KEYSETS']
+          keysets = ENV['KEYSETS'].split(',')
+          if keysets.include?('*')
+            keysets = spec.engine.list
+            puts "Dropping ALL keysets: #{keysets}"
+          else
+            puts "Dropping keysets: #{keysets}"            
+          end
+          keysets.each do |keyset_name|
+            puts "  Dropping: #{keyset_name}"
+            keyset = Babelyoda::Keyset.new(keyset_name)
+            key = Babelyoda::LocalizationKey.new("Dummy", "Dummy")
+            value = Babelyoda::LocalizationValue.new(:en, "Dummy")
+            key << value
+            keyset.merge_key!(key)
+            spec.engine.replace(keyset)
+          end
+          puts "All done!"
+        else
+          puts "Please provide keyset names to drop in the KEYSET environment variable. Separate by commas. Use * for ALL."
+        end
       end
 
     end
