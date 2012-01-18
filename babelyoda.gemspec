@@ -26,4 +26,5 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "rchardet19"
   s.add_runtime_dependency "builder"
   s.add_runtime_dependency "nokogiri"
+  s.add_runtime_dependency "term-ansicolor"
 end

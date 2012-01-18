@@ -3,6 +3,7 @@ BABELYODA_PATH = File.expand_path(File.join(File.dirname(__FILE__), '..'))
 require 'awesome_print'
 
 require_relative 'babelyoda/genstrings'
+require_relative 'babelyoda/git'
 require_relative 'babelyoda/ibtool'
 require_relative 'babelyoda/keyset'
 require_relative 'babelyoda/localization_key'
@@ -23,9 +24,18 @@ namespace :babelyoda do
   end
   
   Babelyoda::Rake.spec do |spec|
-
+    
+    desc "Checks that your environment is sane before doing any changes..."
+    task :check_sanity do
+      puts "Checking SCM requirements..."
+      spec.scm.check_requirements!
+      puts "SCM requirements satisfied."
+      puts "Preparing your tree for localization..."
+      spec.scm.prepare!
+    end
+    
     desc "Extract strings from sources"
-    task :extract_strings do
+    task :extract_strings => :check_sanity do
       puts "Extracting strings from sources..."
       dev_lang = spec.development_language
       Babelyoda::Genstrings.run(spec.source_files, dev_lang) do |keyset|
@@ -38,20 +48,23 @@ namespace :babelyoda do
     end
     
     desc "Extract strings from XIBs"
-    task :extract_xib_strings do
+    task :extract_xib_strings => :check_sanity do
       puts "Extracting .strings from XIBs..."
       spec.xib_files.each do |xib_filename|
         xib = Babelyoda::Xib.new(xib_filename, spec.development_language)
         next unless xib.extractable?(spec.development_language)
         keyset = xib.strings
-        next if keyset.empty?
         puts "  #{xib_filename} => #{xib.strings_filename}"
         Babelyoda::Strings.save_keyset(keyset, xib.strings_filename, spec.development_language)
       end
     end
     
+    desc "Extracts localizable strings into the corresponding .strings files"
+    task :extract => [:check_sanity, :extract_strings, :extract_xib_strings] do
+    end
+    
     desc "Create remote keysets for local keysets"
-    task :create_keysets => [:extract_strings, :extract_xib_strings] do
+    task :create_keysets => [:check_sanity, :extract] do
       # Create remote keysets for each local keyset if they don't exist.
       puts "Creating remote keysets for local keysets..."
       remote_keyset_names = spec.engine.list
@@ -67,7 +80,7 @@ namespace :babelyoda do
     end
     
     desc "Drops remote keys not found in local keysets"
-    task :drop_orphan_keys => :create_keysets do
+    task :drop_orphan_keys => [:check_sanity, :create_keysets] do
       puts "Dropping orphan keys..."
       spec.strings_files.each do |filename|
         strings = Babelyoda::Strings.new(filename, spec.development_language).read!
@@ -89,7 +102,7 @@ namespace :babelyoda do
     end
     
     desc "Pushes resources to the translators"
-    task :push => :drop_orphan_keys do
+    task :push => [:check_sanity, :drop_orphan_keys] do
       puts "Pushing local keys to the remote..."
       spec.strings_files.each do |filename|
         strings = Babelyoda::Strings.new(filename, spec.development_language).read!
@@ -103,7 +116,7 @@ namespace :babelyoda do
     end
     
     desc "Fetches remote strings and merges them down into local .string files"
-    task :fetch_strings do
+    task :fetch_strings => :check_sanity do
       puts "Fetching remote translations..."
       spec.strings_files.each do |filename|
         keyset_name = Babelyoda::Keyset.keyset_name(filename)
@@ -116,9 +129,20 @@ namespace :babelyoda do
         end
       end
     end
+    
+    desc "Incrementally localizes XIB files"
+    task :localize_xibs => :check_sanity do
+      puts "Translating XIB files..."
+      spec.xib_files.each do |filename|
+        xib = Babelyoda::Xib.new(filename, spec.development_language)
+        spec.localization_languages.each do |language|
+          xib.localize_incremental(language, spec.scm)
+        end
+      end
+    end
 
     desc "Pull remote translations"
-    task :pull => :fetch_strings do      
+    task :pull => [:check_sanity, :fetch_strings, :localize_xibs] do
     end
     
     namespace :remote do

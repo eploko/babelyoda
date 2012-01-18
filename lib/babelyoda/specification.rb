@@ -14,6 +14,7 @@ module Babelyoda
     attr_accessor :resources_folder
     attr_accessor :xib_files    
     attr_accessor :strings_files
+    attr_accessor :scm
     
     FILENAME = 'Babelfile'
     
@@ -35,6 +36,5 @@ module Babelyoda
     def all_languages
       [ development_language, localization_languages].flatten!
     end
-    
   end
 end
