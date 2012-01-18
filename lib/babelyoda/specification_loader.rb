@@ -6,9 +6,9 @@ module Babelyoda
 	    klass.extend ClassMethods
 	  end
 
-    def initialize(*args, &block)
+    def initialize(*args)
     	super
-    	block.call(self)
+    	yield(self) if block_given?
     end
 
 	  def method_missing(method_name, *args, &block)

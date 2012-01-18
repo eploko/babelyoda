@@ -6,36 +6,14 @@ module Babelyoda
 	class Git
 		include Babelyoda::SpecificationLoader
 
-		attr_accessor :target_branch
-		attr_accessor :localization_branch_prefix
-		
-		def check_requirements!
-		  $logger.error "GIT: The working copy is not clean. Please commit your work before running Babelyoda tasks." unless clean?
-		  $logger.error "GIT: The target branch is not found: #{target_branch}" unless target_branch_exist?
-		end
-		
-		def prepare!
-		  checkout!(target_branch)
-	    branch!
-	    @versions = GitVersions.new
-		end
-
     def version_exist?(filename)
       versions.exist?(filename)
 	  end
 	  
 	  def store_version!(filename)
-	    if git_modified?(filename)
-  	    git_add!(filename)
-  	    git_commit!("Store a version of '#{filename}' for later use in incremental localization.")
-  	  end
 	    @versions[filename] = git_ls_sha1(filename)
       should_add = !File.exist?(versions.filename)
 	    versions.save!
-	    if should_add || git_modified?(versions.filename)
-  	    git_add!(versions.filename)
-  	    git_commit!("Update the versions file.")
-  	  end
     end
     
     def fetch_versions!(*filenames, &block)
@@ -51,11 +29,27 @@ module Babelyoda
         block.call(results)
       end
     end
+    
+    def transaction(msg)
+      check_requirements!
+      yield if block_given?
+      if git_status.size > 0
+        git_add!('.')
+        git_add!('-u')
+        git_commit!(msg)
+      end
+    end
 		
   private
-  
-    attr_reader :versions
+
+    def versions
+	    @versions ||= GitVersions.new
+    end
     
+		def check_requirements!
+		  $logger.error "GIT: The working copy is not clean. Please commit your work before running Babelyoda tasks." unless clean?
+		end
+
     def git_modified?(filename)
       git_status.has_key?(filename)
     end
@@ -101,35 +95,5 @@ module Babelyoda
     def clean?
       `git status 2>&1`.match(/^nothing to commit \(working directory clean\)$/)
 	  end
-	  
-	  def target_branch_exist?
-	    `git branch 2>&1`.match(/^(\*\s|\s\s)#{target_branch}$/)
-	  end
-	  
-	  def current_branch
-	    `git branch 2>&1`.match(/^\*\s(.*)$/)[1]
-    end
-    
-    def ensure_branch!(branch)
-      $logger.error "Invalid branch. Expected: #{target_branch}" unless current_branch == branch
-    end
-    
-    def checkout!(branch, create = false)
-		  puts "GIT: Checking out #{create ? 'NEW ' : ''}branch '#{branch}'..."
-		  output = `git checkout #{create ? '-b ' : ''}'#{branch}' 2>&1`
-		  okay = false
-		  unless create
-		    okay = output.match(/^(Switched to branch '#{branch}'|Already on '#{branch}')$/)
-		  else
-		    okay = output.match(/^Switched to a new branch '#{branch}'$/)
-		  end
-		  $logger.error "Couldn't checkout branch '#{branch}': #{output}" unless okay
-	    ensure_branch!(branch)
-    end
-    
-    def branch!
-      branch_name = "#{localization_branch_prefix}#{Time.now.to_i}"
-      checkout!(branch_name, true)
-    end
 	end
 end

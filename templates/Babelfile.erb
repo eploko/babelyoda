@@ -7,10 +7,7 @@ Babelyoda::Specification.new do |s|
 		t.project_id = 'FIX: TANKER PROJECT ID HERE'
 		t.endpoint = 'FIX: TANKER END POINT HERE'
 	end
-	s.scm = Babelyoda::Git.new do |scm|
-	  scm.target_branch = 'develop'
-	  scm.localization_branch_prefix = 'localization/'
-	end
+	s.scm = Babelyoda::Git.new
 	s.source_files = FileList['Classes/**/*.{m,mm,h}']
 	s.resources_folder = 'Resources'
 	s.xib_files = FileList['{Classes,Resources}/**/en.lproj/*.{xib}']

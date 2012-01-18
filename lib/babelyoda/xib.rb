@@ -54,8 +54,6 @@ module Babelyoda
       strings_fn = strings_filename(language)
       $logger.error "No strings file found: #{strings_fn}" unless File.exist?(strings_fn)
       Babelyoda::Ibtool.localize(filename, File.localized(filename, language), strings_fn)
-      scm.store_version!(filename)
-      scm.store_version!(File.localized(filename, language))
     end
     
     def localize_incremental(language, scm)
@@ -70,13 +68,15 @@ module Babelyoda
         scm.fetch_versions!(filename, File.localized(filename, language)) do |filenames|
           Babelyoda::Ibtool.localize_incrementally(filename, File.localized(filename, language), strings_fn, filenames[0], filenames[1])
         end
-        scm.store_version!(filename)
-        scm.store_version!(File.localized(filename, language))
       end
     end
     
     def strings_filename(language = nil)
       language ? File.localized(File.join(dirname, "#{basename}.strings"), language) : File.join(dirname, "#{basename}.strings")
+    end
+    
+    def import_strings(scm)
+      Babelyoda::Ibtool.import_strings(filename, strings_filename)
     end
     
   private
