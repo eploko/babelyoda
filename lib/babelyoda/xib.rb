@@ -58,15 +58,15 @@ module Babelyoda
     
     def localize_incremental(language, scm)
       assert_localization_target(language)
-      unless has_incremental_resources?(language, scm)
+      unless localizable_incrementally?(scm, language)
         localize(language, scm)
       else
         puts "Incrementally localizing #{filename} => #{File.localized(filename, language)}..."
         strings_fn = strings_filename(language)
         $logger.error "No strings file found: #{strings_fn}" unless File.exist?(strings_fn)
         
-        scm.fetch_versions!(filename, File.localized(filename, language)) do |filenames|
-          Babelyoda::Ibtool.localize_incrementally(filename, File.localized(filename, language), strings_fn, filenames[0], filenames[1])
+        scm.fetch_versions!(filename) do |filenames|
+          Babelyoda::Ibtool.localize_incrementally(filename, File.localized(filename, language), strings_fn, filenames[0])
         end
       end
     end
@@ -81,9 +81,9 @@ module Babelyoda
     end
     
   private
-    
-    def has_incremental_resources?(language, scm)
-      scm.version_exist?(filename) && scm.version_exist?(File.localized(filename, language))
+  
+    def localizable_incrementally?(scm, language)
+      scm.version_exist?(filename) && File.exist?(File.localized(filename, language))
     end
     
     def assert_localization_target(language)

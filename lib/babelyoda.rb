@@ -150,9 +150,6 @@ namespace :babelyoda do
       spec.scm.transaction("[Babelyoda] Update XIB SHA1 version refs") do 
         spec.xib_files.each do |filename|
           spec.scm.store_version!(filename)
-          spec.localization_languages.each do |language|
-            spec.scm.store_version!(File.localized(filename, language))
-          end
         end
       end
     end
@@ -160,6 +157,28 @@ namespace :babelyoda do
     desc "Pull remote translations"
     task :pull => [:fetch_strings, :localize_xibs] do
     end
+    
+    # desc "Verifies all local translations are present"
+    # task :verify do
+    #   combined_keyset = Babelyoda::Keyset.new('babelyoda.verify')
+    #   spec.strings_files.each do |filename|
+    #     dev_lang_strings = Babelyoda::Strings.new(filename, spec.development_language).read
+    #     combined_keyset.merge!(dev_lang_strings)
+    #     spec.localization_languages.each do |language|
+    #       lang_strings = Babelyoda::Strings.new(filename, language).read
+    #       combined_keyset.merge!(lang_strings)
+    #     end
+    #   end
+    #   puts "TOTAL KEYS: #{combined_keyset}"
+    #   missing = {}
+    #   spec.localization_languages.each do |language|
+    #     missing[language] = Babelyoda::Keyset.new('babelyoda.verify.' + language)
+    #   end
+    #   puts "MISSING KEYS:"
+    #   spec.localization_languages.each do |language|
+    #     puts "  #{language}: #{missing}"
+    #   end
+    # end
     
     namespace :remote do
       

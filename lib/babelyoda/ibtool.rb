@@ -24,7 +24,7 @@ module Babelyoda
       $logger.error "IBTOOL ERROR: #{ncmd}" unless rc
     end
     
-    def self.localize_incrementally(source_xib_fn, target_xib_fn, strings_fn, old_source_xib_fn, old_target_xib_fn)
+    def self.localize_incrementally(source_xib_fn, target_xib_fn, strings_fn, old_source_xib_fn)
       # ibtool
       #   --previous-file path_to_project/English.lproj/MainWindow.old.xib          # The old English XIB
       #   --incremental-file path_to_project/fr.lproj/MainWindow.old.xib            # The old French XIB
@@ -33,7 +33,7 @@ module Babelyoda
       #   --write path_to_project/fr.lproj/MainWindow.xib                           # The new French XIB that will be created
       #   path_to_project/English.lproj/MainWindow.new.xib                          # The new English XIB
 
-      ncmd = ['ibtool', '--previous-file', old_source_xib_fn, '--incremental-file', old_target_xib_fn, 
+      ncmd = ['ibtool', '--previous-file', old_source_xib_fn, '--incremental-file', target_xib_fn, 
         '--strings-file', strings_fn, '--localize-incremental', '--write', target_xib_fn, source_xib_fn]
       rc = Kernel.system(*ncmd)
       $logger.error "IBTOOL ERROR: #{ncmd}" unless rc
