@@ -34,7 +34,7 @@ namespace :babelyoda do
       puts "Extracting strings from sources..."
       dev_lang = spec.development_language
 
-      spec.scm.transaction("Extract strings from sources") do 
+      spec.scm.transaction("[Babelyoda] Extract strings from sources") do 
         Babelyoda::Genstrings.run(spec.source_files, dev_lang) do |keyset|
           old_strings_filename = strings_filename(keyset.name, dev_lang)
           old_strings = Babelyoda::Strings.new(old_strings_filename, dev_lang).read
@@ -48,7 +48,7 @@ namespace :babelyoda do
     desc "Extract strings from XIBs"
     task :extract_xib_strings do
       puts "Extracting .strings from XIBs..."
-      spec.scm.transaction("Extract strings from XIBs") do 
+      spec.scm.transaction("[Babelyoda] Extract strings from XIBs") do 
         spec.xib_files.each do |xib_filename|
           xib = Babelyoda::Xib.new(xib_filename, spec.development_language)
           next unless xib.extractable?(spec.development_language)
@@ -118,7 +118,7 @@ namespace :babelyoda do
     desc "Fetches remote strings and merges them down into local .string files"
     task :fetch_strings do
       puts "Fetching remote translations..."
-      spec.scm.transaction("Merge in remote translations") do 
+      spec.scm.transaction("[Babelyoda] Merge in remote translations") do 
         spec.strings_files.each do |filename|
           keyset_name = Babelyoda::Keyset.keyset_name(filename)
           remote_keyset = spec.engine.load_keyset(keyset_name, nil, :unapproved, true)
@@ -136,7 +136,7 @@ namespace :babelyoda do
     task :localize_xibs do
       puts "Translating XIB files..."
       
-      spec.scm.transaction("Localize XIB files") do 
+      spec.scm.transaction("[Babelyoda] Localize XIB files") do 
         spec.xib_files.each do |filename|
           xib = Babelyoda::Xib.new(filename, spec.development_language)
 
@@ -147,7 +147,7 @@ namespace :babelyoda do
         end
       end
       
-      spec.scm.transaction("Update XIB SHA1 version refs") do 
+      spec.scm.transaction("[Babelyoda] Update XIB SHA1 version refs") do 
         spec.xib_files.each do |filename|
           spec.scm.store_version!(filename)
           spec.localization_languages.each do |language|
