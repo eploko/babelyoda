@@ -76,6 +76,7 @@ module Babelyoda
     end
     
     def import_strings(scm)
+      puts "Importing #{strings_filename} => #{filename}"
       Babelyoda::Ibtool.import_strings(filename, strings_filename)
     end
     

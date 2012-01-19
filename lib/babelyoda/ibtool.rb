@@ -40,7 +40,7 @@ module Babelyoda
     end
     
     def self.import_strings(filename, strings_filename)
-      ncmd = ['ibtool', '--import-strings-file', strings_filename, filename]
+      ncmd = ['ibtool', '--import-strings-file', strings_filename, '--write', filename, filename]
       rc = Kernel.system(*ncmd)
       $logger.error "IBTOOL ERROR: #{ncmd}" unless rc
     end
