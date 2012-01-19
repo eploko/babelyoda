@@ -10,6 +10,10 @@ module Babelyoda
       @values = {}
     end
     
+    def to_s
+      "\"#{@id}\" [#{@values.keys.map{|k| ":#{k.to_s}"}.join(', ')}] // #{@context}"
+    end
+    
     def <<(localization_value)
       @values[localization_value.language.to_sym] = localization_value.dup
       self
