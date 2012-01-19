@@ -121,7 +121,7 @@ namespace :babelyoda do
       spec.scm.transaction("[Babelyoda] Merge in remote translations") do 
         spec.strings_files.each do |filename|
           keyset_name = Babelyoda::Keyset.keyset_name(filename)
-          remote_keyset = spec.engine.load_keyset(keyset_name, nil, :unapproved, true)
+          remote_keyset = spec.engine.load_keyset(keyset_name, nil, :unapproved)
           remote_keyset.drop_empty!
           spec.all_languages.each do |language|
             keyset_filename = strings_filename(keyset_name, language)
@@ -158,27 +158,36 @@ namespace :babelyoda do
     task :pull => [:fetch_strings, :localize_xibs] do
     end
     
-    # desc "Verifies all local translations are present"
-    # task :verify do
-    #   combined_keyset = Babelyoda::Keyset.new('babelyoda.verify')
-    #   spec.strings_files.each do |filename|
-    #     dev_lang_strings = Babelyoda::Strings.new(filename, spec.development_language).read
-    #     combined_keyset.merge!(dev_lang_strings)
-    #     spec.localization_languages.each do |language|
-    #       lang_strings = Babelyoda::Strings.new(filename, language).read
-    #       combined_keyset.merge!(lang_strings)
-    #     end
-    #   end
-    #   puts "TOTAL KEYS: #{combined_keyset}"
-    #   missing = {}
-    #   spec.localization_languages.each do |language|
-    #     missing[language] = Babelyoda::Keyset.new('babelyoda.verify.' + language)
-    #   end
-    #   puts "MISSING KEYS:"
-    #   spec.localization_languages.each do |language|
-    #     puts "  #{language}: #{missing}"
-    #   end
-    # end
+    desc "Verifies all local translations are present"
+    task :verify do
+      combined_keyset = Babelyoda::Keyset.new('babelyoda.verify')
+      spec.strings_files.each do |filename|
+        dev_lang_strings = Babelyoda::Strings.new(filename, spec.development_language).read
+        combined_keyset.merge!(dev_lang_strings)
+        spec.localization_languages.each do |language|
+          lang_strings = Babelyoda::Strings.new(filename, language).read
+          combined_keyset.merge!(lang_strings)
+        end
+      end
+      $logger.success("#{spec.development_language}: #{combined_keyset.keys.size} keys", false)
+      missing = {}
+      spec.localization_languages.each do |language|
+        missing[language] = Babelyoda::Keyset.new("babelyoda.verify.#{language}")
+      end
+      combined_keyset.drop_empty!
+      combined_keyset.keys.each_value do |key|
+        spec.localization_languages.each do |lang|
+          missing[lang.to_sym].merge_key!(key) unless key.values.has_key?(lang.to_sym)
+        end
+      end
+      total_missing_count = 0
+      spec.localization_languages.each do |language|
+        count = missing[language].keys.size
+        total_missing_count += count
+        $logger.error("#{language}: #{combined_keyset.keys.size - count} keys (#{count} translations missing)", false, false) if count > 0
+      end
+      exit 1 if total_missing_count > 0
+    end
     
     namespace :remote do
       

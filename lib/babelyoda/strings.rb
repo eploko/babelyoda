@@ -1,5 +1,6 @@
 require 'rchardet19'
 
+require_relative 'file'
 require_relative 'keyset'
 require_relative 'strings_lexer'
 require_relative 'strings_parser'
@@ -20,8 +21,9 @@ module Babelyoda
     end
     
     def read
-      if File.exist?(@filename)
-        File.open(@filename, read_mode) do |f|
+      localized_filename = File.localized(@filename, @language)
+      if File.exist?(localized_filename)
+        File.open(localized_filename, read_mode) do |f|
           lexer = StringsLexer.new
           parser = StringsParser.new(lexer, @language)
           parser.parse(f.read) do |localization_key|
@@ -56,6 +58,7 @@ module Babelyoda
       cd = CharDet.detect(File.read(@filename))
       encoding_str = Encoding.aliases[cd.encoding] || cd.encoding
       encoding_str = 'UTF-8' if encoding_str == 'utf-8'
+      encoding_str = 'UTF-8' if encoding_str == 'ascii'
       if (encoding_str != "UTF-8")
         "rb:#{encoding_str}:UTF-8"
       else

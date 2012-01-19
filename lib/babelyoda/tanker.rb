@@ -36,7 +36,8 @@ module Babelyoda
       context &&= context.text
       result = self.new(node[:id], context)
       node.css('value').each do |value_node|
-        result << Babelyoda::LocalizationValue.parse_xml(value_node)
+        value = Babelyoda::LocalizationValue.parse_xml(value_node)
+        result << value if value
       end
       result
     end
@@ -44,7 +45,9 @@ module Babelyoda
   
   class LocalizationValue
     def self.parse_xml(node)
-      self.new(node[:language], node.text, node[:status])
+      if node.text.length > 0
+        self.new(node[:language], node.text, node[:status])
+      end
     end
   end
   
