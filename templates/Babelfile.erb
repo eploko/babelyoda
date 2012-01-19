@@ -1,0 +1,15 @@
+Babelyoda::Specification.new do |s|
+	s.name = 'YOUR PROJECT NAME HERE'
+	s.development_language = :en
+	s.localization_languages = [:ru, :uk, :tr]
+	s.engine = Babelyoda::Tanker.new do |t|
+		t.token = 'FIX: TANKER TOKEN HERE'
+		t.project_id = 'FIX: TANKER PROJECT ID HERE'
+		t.endpoint = 'FIX: TANKER END POINT HERE'
+	end
+	s.scm = Babelyoda::Git.new
+	s.source_files = FileList['Classes/**/*.{m,mm,h}']
+	s.resources_folder = 'Resources'
+	s.xib_files = FileList['{Classes,Resources}/**/en.lproj/*.{xib}']
+	s.strings_files = FileList['{Classes,Resources}/**/en.lproj/*.{strings}']
+end

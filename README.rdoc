@@ -1,6 +1,6 @@
 = babelyoda
 
-A simple utility to push/pull l10n resources of an iPhone project to/from the translators.
+A simple utility to push/pull l10n resources of an Xcode project to/from the translators.
 
 == Note on Patches/Pull Requests
  
@@ -14,4 +14,4 @@ A simple utility to push/pull l10n resources of an iPhone project to/from the tr
 
 == Copyright
 
-Copyright (c) 2010 Andrey Subbotin. See LICENSE for details.
+Copyright (c) 2010-2012 Andrey Subbotin. See LICENSE for details.
