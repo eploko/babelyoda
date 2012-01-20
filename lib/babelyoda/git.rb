@@ -47,7 +47,10 @@ module Babelyoda
     end
     
 		def check_requirements!
-		  $logger.error "GIT: The working copy is not clean. Please commit your work before running Babelyoda tasks." unless clean?
+		  unless clean?
+		    $logger.error "The working copy is not clean. Please commit your work before running Babelyoda tasks." 
+		    exit 1
+		  end
 		end
 
     def git_modified?(filename)
@@ -69,9 +72,12 @@ module Babelyoda
     end
 
     def git_commit!(msg)
-	    ncmd = ['git', 'commit', '-m', msg]
-	    rc = Kernel.system(*ncmd)
-	    $logger.error "#{ncmd}" unless rc
+	    ncmd = "git commit -m \"#{msg}\" 2>&1"
+	    output = `#{ncmd}`
+	    $logger.error ncmd unless $?
+	    unless output.empty?
+	      $logger.info output.gsub!(/[\n\r]/, ' ')
+	    end
     end
     
     def git_show(sha1, filename = nil)
