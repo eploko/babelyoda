@@ -104,6 +104,10 @@ module Babelyoda
       Babelyoda::Keyset.new(keyset_name)
     end
     
+    def drop_keyset!(keyset_name)
+      delete("/admin/project/#{project_id}/keyset/", { :keyset => keyset_name })
+    end
+    
   private
   
     MULTIPART_BOUNDARY = '114YANDEXTANKERCLIENTBNDR';
@@ -185,6 +189,29 @@ module Babelyoda
         Nokogiri::XML.parse(res.body)
       else
         doc = Nokogiri::XML.parse(res.body)
+        error = doc.css('result error')[0].content
+        raise Error.new(error)
+      end
+    end
+    
+    def delete(method_name, payload = nil)
+      uri = URI(method(method_name))
+      uri.query = URI.encode_www_form(payload) if payload
+      req = Net::HTTP::Delete.new(uri.request_uri)
+      req['AUTHORIZATION'] = token
+
+      # puts "DELETE URI: #{uri}"
+
+      res = Net::HTTP.start(uri.host, uri.port) do |http|
+        http.request(req)
+      end
+
+      case res
+      when Net::HTTPSuccess, Net::HTTPRedirection
+        Nokogiri::XML.parse(res.body)
+      else
+        doc = Nokogiri::XML.parse(res.body)
+        puts "DOC: #{doc}"
         error = doc.css('result error')[0].content
         raise Error.new(error)
       end

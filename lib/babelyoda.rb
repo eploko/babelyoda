@@ -31,10 +31,9 @@ namespace :babelyoda do
     
     desc "Extract strings from sources"
     task :extract_strings do
-      puts "Extracting strings from sources..."
-      dev_lang = spec.development_language
-
       spec.scm.transaction("[Babelyoda] Extract strings from sources") do 
+        puts "Extracting strings from sources..."
+        dev_lang = spec.development_language
         Babelyoda::Genstrings.run(spec.source_files, dev_lang) do |keyset|
           old_strings_filename = strings_filename(keyset.name, dev_lang)
           old_strings = Babelyoda::Strings.new(old_strings_filename, dev_lang).read
@@ -47,8 +46,8 @@ namespace :babelyoda do
     
     desc "Extract strings from XIBs"
     task :extract_xib_strings do
-      puts "Extracting .strings from XIBs..."
       spec.scm.transaction("[Babelyoda] Extract strings from XIBs") do 
+        puts "Extracting .strings from XIBs..."
         spec.xib_files.each do |xib_filename|
           xib = Babelyoda::Xib.new(xib_filename, spec.development_language)
           next unless xib.extractable?(spec.development_language)
@@ -65,7 +64,6 @@ namespace :babelyoda do
     
     desc "Create remote keysets for local keysets"
     task :create_keysets => :extract do
-      # Create remote keysets for each local keyset if they don't exist.
       puts "Creating remote keysets for local keysets..."
       remote_keyset_names = spec.engine.list
       spec.strings_files.each do |filename|
@@ -74,8 +72,11 @@ namespace :babelyoda do
           puts "  Tanker: An existing keyset found: #{keyset_name}"
           next 
         end
-        spec.engine.create(keyset_name)
-        puts "  Tanker: Created NEW keyset: #{keyset_name}"
+        strings = Babelyoda::Strings.new(filename, spec.development_language).read!
+        if strings.keys.size > 0
+          spec.engine.create(keyset_name)
+          puts "  Tanker: Created NEW keyset: #{keyset_name}"
+        end
       end
     end
     
@@ -86,18 +87,23 @@ namespace :babelyoda do
         strings = Babelyoda::Strings.new(filename, spec.development_language).read!
         puts "  Processing keyset: #{strings.name}"
         remote_keyset = spec.engine.load_keyset(strings.name)
-        keys_to_drop = []
-        remote_keyset.keys.each_value do |key|
-          unless strings.keys.has_key?(key.id)
-            keys_to_drop << key.id 
-            puts "    Found orphan key: #{key.id}"
+        original_keys_size = remote_keyset.keys.size
+        remote_keyset.keys.delete_if do |key, value|
+          unless strings.keys.has_key?(key)
+            puts "    Found orphan key: #{key}"
+            true
+          else
+            false
           end
         end
-        keys_to_drop.each do |key|
-          remote_keyset.keys.delete(key)
+        next if original_keys_size == remote_keyset.keys.size
+        if remote_keyset.keys.size > 0
+          puts "      Keys removed: #{original_keys_size - remote_keyset.keys.size}, keyset REPLACED."
+          spec.engine.replace(remote_keyset)
+        else
+          puts "      All keys removed: keyset DELETED."
+          spec.engine.drop_keyset!(remote_keyset.name)
         end
-        spec.engine.replace(remote_keyset)
-        puts "    Dropped keys: #{keys_to_drop.size}"
       end
     end
     
@@ -110,15 +116,17 @@ namespace :babelyoda do
         remote_keyset = spec.engine.load_keyset(strings.name, nil, :unapproved)
         result = remote_keyset.merge!(strings, preserve: true)
         remote_keyset.ensure_languages!(spec.all_languages)
-        spec.engine.replace(remote_keyset)
-        puts "    New keys: #{result[:new]} Updated keys: #{result[:updated]}"
+        if result[:new] > 0 || result[:updated] > 0
+          spec.engine.replace(remote_keyset)
+          puts "    New keys: #{result[:new]} Updated keys: #{result[:updated]}"
+        end
       end
     end
     
     desc "Fetches remote strings and merges them down into local .string files"
     task :fetch_strings do
-      puts "Fetching remote translations..."
       spec.scm.transaction("[Babelyoda] Merge in remote translations") do 
+        puts "Fetching remote translations..."
         spec.strings_files.each do |filename|
           keyset_name = Babelyoda::Keyset.keyset_name(filename)
           remote_keyset = spec.engine.load_keyset(keyset_name, nil, :unapproved)
@@ -134,9 +142,8 @@ namespace :babelyoda do
     
     desc "Incrementally localizes XIB files"
     task :localize_xibs do
-      puts "Translating XIB files..."
-      
       spec.scm.transaction("[Babelyoda] Localize XIB files") do 
+        puts "Translating XIB files..."
         spec.xib_files.each do |filename|
           xib = Babelyoda::Xib.new(filename, spec.development_language)
 
@@ -208,12 +215,7 @@ namespace :babelyoda do
           end
           keysets.each do |keyset_name|
             puts "  Dropping: #{keyset_name}"
-            keyset = Babelyoda::Keyset.new(keyset_name)
-            key = Babelyoda::LocalizationKey.new("Dummy", "Dummy")
-            value = Babelyoda::LocalizationValue.new(:en, "Dummy")
-            key << value
-            keyset.merge_key!(key)
-            spec.engine.replace(keyset)
+            spec.engine.drop_keyset!(keyset_name)
           end
           puts "All done!"
         else
