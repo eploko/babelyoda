@@ -52,8 +52,10 @@ namespace :babelyoda do
           xib = Babelyoda::Xib.new(xib_filename, spec.development_language)
           next unless xib.extractable?(spec.development_language)
           keyset = xib.strings
-          puts "  #{xib_filename} => #{xib.strings_filename}"
-          Babelyoda::Strings.save_keyset(keyset, xib.strings_filename, spec.development_language)
+          unless keyset.empty?
+            puts "  #{xib_filename} => #{xib.strings_filename}"
+            Babelyoda::Strings.save_keyset(keyset, xib.strings_filename, spec.development_language)
+          end
         end
       end
     end
@@ -73,7 +75,7 @@ namespace :babelyoda do
           next 
         end
         strings = Babelyoda::Strings.new(filename, spec.development_language).read!
-        if strings.keys.size > 0
+        unless strings.empty?
           spec.engine.create(keyset_name)
           puts "  Tanker: Created NEW keyset: #{keyset_name}"
         end
@@ -97,7 +99,7 @@ namespace :babelyoda do
           end
         end
         next if original_keys_size == remote_keyset.keys.size
-        if remote_keyset.keys.size > 0
+        unless remote_keyset.empty?
           puts "      Keys removed: #{original_keys_size - remote_keyset.keys.size}, keyset REPLACED."
           spec.engine.replace(remote_keyset)
         else
