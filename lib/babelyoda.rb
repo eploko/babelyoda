@@ -105,6 +105,24 @@ namespace :babelyoda do
         end
       end
     end
+
+    desc "Drops remote keysets not found locally"
+    task :drop_orphan_keysets => :create_keysets do
+      $logger.info "Dropping orphan keysets..."
+      local_keysets = spec.strings_files.map do |filename|
+        strings = Babelyoda::Strings.new(filename, spec.development_language)
+        strings.name        
+      end
+      count = 0
+      spec.engine.list.each do |remote_keyset_name|
+        unless local_keysets.include?(remote_keyset_name)
+          $logger.debug "Dropping keyset: #{remote_keyset_name}"
+          spec.engine.drop_keyset!(remote_keyset_name)
+          count += 1
+        end
+      end
+      $logger.info "Dropped keysets: #{count}" if count > 0
+    end
     
     desc "Drops remote keys not found in local keysets"
     task :drop_orphan_keys => :create_keysets do
@@ -134,7 +152,7 @@ namespace :babelyoda do
     end
     
     desc "Pushes resources to the translators"
-    task :push => :drop_orphan_keys do
+    task :push => [:drop_orphan_keysets, :drop_orphan_keys] do
       $logger.info "Pushing local keys to the remote..."
       spec.strings_files.each do |filename|
         strings = Babelyoda::Strings.new(filename, spec.development_language).read!

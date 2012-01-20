@@ -19,6 +19,21 @@ module Babelyoda
     
     def to_s ; "<#{self.class}: name = #{name}, keys.size = #{keys.size}>" ; end
     
+    def debug_counts(languages = [])
+      counts = languages.map do |language|
+        count = 0
+        keys.each_value do |key|
+          count += 1 if key.values.has_key?(language)
+        end
+        count
+      end
+      $logger.debug "=== DEBUG COUNTS FOR: #{name} ==="
+      languages.each_with_index do |language, index|
+        $logger.debug "#{language}: #{counts[index]}"
+      end
+      $logger.debug "=== // DEBUG COUNTS FOR: #{name} ==="
+    end
+    
     def empty? ; keys.size == 0 ; end
     
     def merge!(keyset, options = {})
