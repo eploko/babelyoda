@@ -52,6 +52,10 @@ module Babelyoda
       strings.save!
     end
     
+    def drop!
+      FileUtils.rm filename
+    end
+    
   private
             
     def read_mode

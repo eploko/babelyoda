@@ -56,7 +56,7 @@ module Babelyoda
     
     def git_status
       result = {}
-      `git status --porcelain`.scan(/^(\sM|\?\?)\s+(.*)$/).each do |m|
+      `git status --porcelain`.scan(/^(\sM|\sD|\?\?)\s+(.*)$/).each do |m|
         result[m[1]] = m[0]
       end
       result

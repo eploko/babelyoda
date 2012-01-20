@@ -64,8 +64,22 @@ namespace :babelyoda do
     task :extract => [:extract_strings, :extract_xib_strings] do
     end
     
+    desc "Drops empty local keysets"
+    task :drop_empty_strings do
+      spec.scm.transaction("[Babelyoda] Drop empty .strings files") do 
+        puts "Dropping empty .strings files..."
+        spec.strings_files.each do |filename|
+          strings = Babelyoda::Strings.new(filename, spec.development_language).read!
+          if strings.empty?
+            puts "  REMOVED empty file: #{filename}"
+            strings.drop!
+          end
+        end
+      end
+    end
+    
     desc "Create remote keysets for local keysets"
-    task :create_keysets => :extract do
+    task :create_keysets => [:extract, :drop_empty_strings] do
       puts "Creating remote keysets for local keysets..."
       remote_keyset_names = spec.engine.list
       spec.strings_files.each do |filename|
