@@ -49,7 +49,7 @@ module Babelyoda
     end
     
     def localize(language, scm)
-      puts "Localizing #{filename} => #{File.localized(filename, language)}..."
+      $logger.debug "Localizing #{filename} => #{File.localized(filename, language)}..."
       assert_localization_target(language)
       strings_fn = strings_filename(language)
       $logger.error "No strings file found: #{strings_fn}" unless File.exist?(strings_fn)
@@ -61,7 +61,7 @@ module Babelyoda
       unless localizable_incrementally?(scm, language)
         localize(language, scm)
       else
-        puts "Incrementally localizing #{filename} => #{File.localized(filename, language)}..."
+        $logger.debug "Incrementally localizing #{filename} => #{File.localized(filename, language)}..."
         strings_fn = strings_filename(language)
         $logger.error "No strings file found: #{strings_fn}" unless File.exist?(strings_fn)
         
@@ -76,7 +76,7 @@ module Babelyoda
     end
     
     def import_strings(scm)
-      puts "Importing #{strings_filename} => #{filename}"
+      $logger.debug "Importing #{strings_filename} => #{filename}"
       Babelyoda::Ibtool.import_strings(filename, strings_filename)
     end
     

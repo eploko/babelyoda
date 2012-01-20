@@ -25,4 +25,5 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "builder",         '~> 3.0', '>= 3.0.0'
   s.add_runtime_dependency "nokogiri",        '~> 1.5', '>= 1.5.0'
   s.add_runtime_dependency "term-ansicolor",  '~> 1.0', '>= 1.0.7'
+  s.add_runtime_dependency "log4r",           '~> 1.1.7'
 end

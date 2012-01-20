@@ -8,7 +8,7 @@ module Babelyoda
         basename = File.basename(xib_filename, '.xib')
         strings_filename = File.join(dir, "#{basename}.strings")
         cmd = "ibtool --generate-strings-file '#{strings_filename}' '#{xib_filename}'"
-        $logger.error "IBTOOL ERROR: #{cmd}" unless Kernel.system(cmd)
+        $logger.error "#{cmd}" unless Kernel.system(cmd)
         return Babelyoda::Strings.new(strings_filename, language).read!
       end
     end
@@ -21,7 +21,7 @@ module Babelyoda
 
       ncmd = ['ibtool', '--strings-file', strings_fn, '--write', target_xib_fn, source_xib_fn]
       rc = Kernel.system(*ncmd)
-      $logger.error "IBTOOL ERROR: #{ncmd}" unless rc
+      $logger.error "#{ncmd}" unless rc
     end
     
     def self.localize_incrementally(source_xib_fn, target_xib_fn, strings_fn, old_source_xib_fn)
@@ -36,13 +36,13 @@ module Babelyoda
       ncmd = ['ibtool', '--previous-file', old_source_xib_fn, '--incremental-file', target_xib_fn, 
         '--strings-file', strings_fn, '--localize-incremental', '--write', target_xib_fn, source_xib_fn]
       rc = Kernel.system(*ncmd)
-      $logger.error "IBTOOL ERROR: #{ncmd}" unless rc
+      $logger.error "#{ncmd}" unless rc
     end
     
     def self.import_strings(filename, strings_filename)
       ncmd = ['ibtool', '--import-strings-file', strings_filename, '--write', filename, filename]
       rc = Kernel.system(*ncmd)
-      $logger.error "IBTOOL ERROR: #{ncmd}" unless rc
+      $logger.error "#{ncmd}" unless rc
     end
     
   private

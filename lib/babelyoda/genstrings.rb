@@ -10,7 +10,7 @@ module Babelyoda
       keysets = {}
       files.each do |fn|
         Dir.mktmpdir do |dir|
-          raise "ERROR: genstrings failed." unless Kernel.system("genstrings -littleEndian -o '#{dir}' '#{fn}'")
+          raise "genstrings failed." unless Kernel.system("genstrings -littleEndian -o '#{dir}' '#{fn}'")
           Dir.glob(File.join(dir, '*.strings')).each do |strings_file|
             strings = Babelyoda::Strings.new(strings_file, language).read!
             strings.name = File.join('Resources', File.basename(strings.name))

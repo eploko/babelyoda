@@ -3,7 +3,8 @@ require 'net/http'
 require 'nokogiri'
 require 'stringio'
 
-require 'babelyoda/specification_loader'
+require_relative 'logger'
+require_relative 'specification_loader'
 
 module Babelyoda
   class Keyset 
@@ -155,8 +156,8 @@ module Babelyoda
       req.content_type = multipart_content_type
       req.body = multipart_data(payload)
 
-      # puts "POST URI: #{uri}"
-      # puts "POST BODY: #{req.body}"
+      $logger.debug "POST URI: #{uri}"
+      $logger.debug "POST BODY: #{req.body}"
 
       res = Net::HTTP.start(uri.host, uri.port) do |http|
         http.request(req)
@@ -178,7 +179,7 @@ module Babelyoda
       req = Net::HTTP::Get.new(uri.request_uri)
       req['AUTHORIZATION'] = token
 
-      # puts "GET URI: #{uri}"
+      $logger.debug "GET URI: #{uri}"
 
       res = Net::HTTP.start(uri.host, uri.port) do |http|
         http.request(req)
@@ -200,7 +201,7 @@ module Babelyoda
       req = Net::HTTP::Delete.new(uri.request_uri)
       req['AUTHORIZATION'] = token
 
-      # puts "DELETE URI: #{uri}"
+      $logger.debug "DELETE URI: #{uri}"
 
       res = Net::HTTP.start(uri.host, uri.port) do |http|
         http.request(req)
@@ -211,7 +212,6 @@ module Babelyoda
         Nokogiri::XML.parse(res.body)
       else
         doc = Nokogiri::XML.parse(res.body)
-        puts "DOC: #{doc}"
         error = doc.css('result error')[0].content
         raise Error.new(error)
       end

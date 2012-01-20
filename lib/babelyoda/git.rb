@@ -65,13 +65,13 @@ module Babelyoda
     def git_add!(filename)
 	    ncmd = ['git', 'add', filename]
 	    rc = Kernel.system(*ncmd)
-	    $logger.error "GIT ERROR: #{ncmd}" unless rc
+	    $logger.error "#{ncmd}" unless rc
     end
 
     def git_commit!(msg)
 	    ncmd = ['git', 'commit', '-m', msg]
 	    rc = Kernel.system(*ncmd)
-	    $logger.error "GIT ERROR: #{ncmd}" unless rc
+	    $logger.error "#{ncmd}" unless rc
     end
     
     def git_show(sha1, filename = nil)
@@ -83,12 +83,12 @@ module Babelyoda
         end
         blob
       }
-	    $logger.error "GIT ERROR: #{ncmd}" unless $? == 0
+	    $logger.error "#{ncmd}" unless $? == 0
     end
     
     def git_ls_sha1(filename)
       matches = `git ls-files -s '#{filename}'`.match(/^\d{6}\s+([^\s]+)\s+.*$/)
-      $logger.error "GIT ERROR: Couldn't get SHA1 for: #{filename}" unless matches
+      $logger.error "Couldn't get SHA1 for: #{filename}" unless matches
       matches[1]
     end
   
