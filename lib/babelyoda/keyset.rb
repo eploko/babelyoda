@@ -1,3 +1,5 @@
+require_relative 'logger'
+
 module Babelyoda
   class Keyset
     attr_accessor :name
