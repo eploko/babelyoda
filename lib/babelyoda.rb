@@ -205,22 +205,23 @@ namespace :babelyoda do
           combined_keyset.merge!(lang_strings)
         end
       end
-      $logger.info("#{spec.development_language}: #{combined_keyset.keys.size} keys", false)
-      missing = {}
+      $logger.info "#{spec.development_language}: #{combined_keyset.keys.size} keys"
+      total_missing_count = combined_keyset.keys.size
+      
+      present = {}
       spec.localization_languages.each do |language|
-        missing[language] = Babelyoda::Keyset.new("babelyoda.verify.#{language}")
+        present[language] = Babelyoda::Keyset.new("babelyoda.verify.#{language}")
       end
       combined_keyset.drop_empty!
       combined_keyset.keys.each_value do |key|
         spec.localization_languages.each do |lang|
-          missing[lang.to_sym].merge_key!(key) unless key.values.has_key?(lang.to_sym)
+          present[lang.to_sym].merge_key!(key) if key.values.has_key?(lang.to_sym)
         end
       end
-      total_missing_count = 0
       spec.localization_languages.each do |language|
-        count = missing[language].keys.size
-        total_missing_count += count
-        $logger.error("#{language}: #{combined_keyset.keys.size - count} keys (#{count} translations missing)", false, false) if count > 0
+        count = present[language].keys.size
+        total_missing_count -= count
+        $logger.error "#{language}: #{combined_keyset.keys.size - count} keys (#{count} translations missing)" if count > 0
       end
       exit 1 if total_missing_count > 0
     end
