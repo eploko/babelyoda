@@ -1,6 +1,7 @@
 BABELYODA_PATH = File.expand_path(File.join(File.dirname(__FILE__), '..'))
 
 require 'awesome_print'
+require 'fileutils'
 
 require_relative 'babelyoda/genstrings'
 require_relative 'babelyoda/git'
@@ -68,12 +69,20 @@ namespace :babelyoda do
     task :drop_empty_strings do
       spec.scm.transaction("[Babelyoda] Drop empty .strings files") do 
         puts "Dropping empty .strings files..."
+        files_to_drop = []
         spec.strings_files.each do |filename|
           strings = Babelyoda::Strings.new(filename, spec.development_language).read!
           if strings.empty?
-            puts "  REMOVED empty file: #{filename}"
-            strings.drop!
+            files_to_drop << filename
+            spec.localization_languages.each do |language|
+              localized_filename = File.localized(filename, language)
+              files_to_drop << localized_filename if File.exist?(localized_filename)
+            end
           end
+        end
+        files_to_drop.each do |filename|
+          puts "  REMOVED empty file: #{filename}"
+          FileUtils.rm filename
         end
       end
     end
@@ -162,10 +171,13 @@ namespace :babelyoda do
         puts "Translating XIB files..."
         spec.xib_files.each do |filename|
           xib = Babelyoda::Xib.new(filename, spec.development_language)
-
-          xib.import_strings(spec.scm)
-          spec.localization_languages.each do |language|
-            xib.localize_incremental(language, spec.scm)
+          if xib.localizable?
+            xib.import_strings(spec.scm)
+            spec.localization_languages.each do |language|
+              xib.localize_incremental(language, spec.scm)
+            end
+          else
+            puts "WARNING: #{filename} has no localizable resources. No localization needed."
           end
         end
       end

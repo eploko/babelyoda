@@ -21,9 +21,8 @@ module Babelyoda
     end
     
     def read
-      localized_filename = File.localized(@filename, @language)
-      if File.exist?(localized_filename)
-        File.open(localized_filename, read_mode) do |f|
+      if File.exist?(@filename)
+        File.open(@filename, read_mode) do |f|
           lexer = StringsLexer.new
           parser = StringsParser.new(lexer, @language)
           parser.parse(f.read) do |localization_key|
@@ -50,10 +49,6 @@ module Babelyoda
       strings = self.new(filename, language)
       strings.merge!(keyset)
       strings.save!
-    end
-    
-    def drop!
-      FileUtils.rm filename
     end
     
   private

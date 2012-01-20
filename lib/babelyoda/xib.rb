@@ -80,6 +80,10 @@ module Babelyoda
       Babelyoda::Ibtool.import_strings(filename, strings_filename)
     end
     
+    def localizable?
+      File.exist?(strings_filename)
+    end
+    
   private
   
     def localizable_incrementally?(scm, language)
