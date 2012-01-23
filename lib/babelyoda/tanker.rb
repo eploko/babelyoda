@@ -69,6 +69,8 @@ module Babelyoda
         :file => StringIO.new(doc),
         'project-id' => project_id,
         'keyset-id' => keyset.name,
+        # TODO: REMOVE ME when Tanker is fixed.
+        'language' => :en,
         :format => 'xml'
       }
       payload.merge!({:language => language}) if language
