@@ -17,7 +17,10 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   # specify any dependencies here; for example:
-  s.add_development_dependency "rspec",       '~> 2.8', '>= 2.8.0'
+  s.add_development_dependency "rspec"
+  s.add_development_dependency "guard"
+  s.add_development_dependency "guard-rspec"
+  s.add_development_dependency "ruby_gntp"
   s.add_runtime_dependency "awesome_print",   '~> 1.0', '>= 1.0.2'
   s.add_runtime_dependency "rake",            '~> 0.9', '>= 0.9.2.2'
   s.add_runtime_dependency "active_support",  '~> 3.0', '>= 3.0.0'

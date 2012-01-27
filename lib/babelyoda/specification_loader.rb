@@ -17,7 +17,11 @@ module Babelyoda
   	end
 
     def dump
-    	ap self, :indent => -2
+      unless ::Rake.application.options.trace
+      	ap self, :indent => -2
+      else
+      	p self
+      end
     end
     
     module ClassMethods

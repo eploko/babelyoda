@@ -5,19 +5,15 @@ require 'stringio'
 
 require_relative 'logger'
 require_relative 'specification_loader'
+require_relative 'localization_key'
+require_relative 'localization_value'
 
 module Babelyoda
   class Keyset 
     def to_xml(xml, language = nil)
       xml.keyset(:id => name) do
         keys.each_value do |key|
-          xml.key(:id => key.id, :is_plural => 'False') do
-            xml.context(key.context)
-            key.values.each_value do |value|
-              next if language && (value.language.to_s != language.to_s)
-              xml.value(value.text, :language => value.language, :status => value.status)
-            end
-          end
+          key.to_xml(xml, language)
         end
       end
     end
@@ -42,12 +38,65 @@ module Babelyoda
       end
       result
     end
+    
+    def to_xml(xml, language = nil)
+      xml.key(:id => self.id, :is_plural => (plural? ? 'True' : 'False')) do |key|
+        xml << "<context>#{self.context}</context>"
+        self.values.each_value do |value|
+          next if language && (value.language.to_s != language.to_s)
+          value.to_xml(xml)
+        end
+      end
+    end
   end
   
   class LocalizationValue
     def self.parse_xml(node)
-      if node.text.length > 0
+      if node.css('plural').first
+        plural = node.css('plural').first
+
+        plural_key = plural.css('one').first
+        value_one = self.new(node[:language], plural_key.text, node[:status])
+        value_one.pluralize!(:one)
+
+        plural_key = plural.css('some').first
+        value_some = self.new(node[:language], plural_key.text, node[:status])
+        value_some.pluralize!(:some)
+
+        plural_key = plural.css('many').first
+        value_many = self.new(node[:language], plural_key.text, node[:status])
+        value_many.pluralize!(:many)
+
+        plural_key = plural.css('none').first
+        value_none = self.new(node[:language], plural_key.text, node[:status])
+        value_none.pluralize!(:none)
+
+        value_one.merge!(value_some)
+        value_one.merge!(value_many)
+        value_one.merge!(value_none)
+        
+        value_one.text.keys.each do |k|
+          value_one.text[k] = nil if value_one.text[k] == ''
+        end
+        
+        value_one
+      elsif node.text.length > 0
         self.new(node[:language], node.text, node[:status])
+      end
+    end
+    
+    def to_xml(xml)
+      unless plural?
+        xml.value(self.text, :language => self.language, :status => self.status)
+      else
+        xml.value(:language => self.language, :status => self.status) do |value|
+          value.plural do |plural|
+            plural.one text[:one] || ''
+            plural.some text[:some] || ''
+            plural.many text[:many] || ''
+            plural.none text[:none] || ''
+          end
+        end
       end
     end
   end
@@ -124,13 +173,14 @@ module Babelyoda
     end
 
     def project_xml(&block)
-      xml = Builder::XmlMarkup.new
-      xml.instruct!(:xml, :encoding => "UTF-8")
-      xml.tanker do
-        xml.project(:id => project_id) do
-          yield xml
+      xml = Nokogiri::XML::Builder.new(:encoding => "UTF-8") do |xml|
+        xml.tanker do
+          xml.project(:id => project_id) do
+            yield xml
+          end
         end
       end
+      xml.to_xml(:indent => 2)
     end
 
     def multipart_data(payload = {}, boundary = MULTIPART_BOUNDARY)
