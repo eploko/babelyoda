@@ -59,9 +59,7 @@ module Babelyoda
     
     def ensure_languages!(languages = [])
       @keys.each_value do |key|
-        languages.each do |language| 
-          key.values[language] ||= Babelyoda::LocalizationValue.new(language, '')
-        end
+        key.ensure_languages!(languages)
       end
     end
     

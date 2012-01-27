@@ -1,3 +1,5 @@
+require_relative 'regexp'
+
 module Babelyoda
   class LocalizationKey
     attr_reader :id
@@ -8,14 +10,31 @@ module Babelyoda
       @id = id
       @context = context
       @values = {}
+      @plural = plural_id?(id)
+      @plural_key = plural? ? extract_plural_key(id) : nil
+      @id = depluralize_key(@id) if plural?
     end
     
     def to_s
       "\"#{@id}\" [#{@values.keys.map{|k| ":#{k.to_s}"}.join(', ')}] // #{@context}"
     end
     
+    def plural? ; @plural ; end
+    
     def <<(localization_value)
-      @values[localization_value.language.to_sym] = localization_value.dup
+      raise "Can't merge a plural value into a non-plural key" if !plural? && localization_value.plural?
+      lang = localization_value.language.to_sym
+      value = localization_value.dup
+      if plural?
+        value.pluralize!(@plural_key)
+        if @values[lang]
+          @values[lang].merge!(value, { :preserve => true })
+        else
+          @values[lang] = value
+        end
+      else
+        @values[lang] = value
+      end
       self
     end
     
@@ -23,7 +42,8 @@ module Babelyoda
       updated = false
       
       context_changed = false
-      if @context != localization_key.context
+      new_context = localization_key.context
+      if @context != new_context && new_context != nil && new_context.length > 0
         @context = localization_key.context
         updated = context_changed = true
       end
@@ -56,5 +76,16 @@ module Babelyoda
     def empty?
       @values.empty?
     end
+    
+    def ensure_languages!(languages = [])
+      languages.each do |language|
+        unless self.values[language]
+          self << Babelyoda::LocalizationValue.new(language, '')
+        end 
+      end      
+    end    
+    
+  private
+    include Babelyoda::Regexp
   end
 end

@@ -6,6 +6,31 @@ require_relative 'strings_lexer'
 require_relative 'strings_parser'
 
 module Babelyoda
+  class Keyset
+    def to_strings(io, language)
+      keys.each_value do |key|
+        key.to_strings(io, language)
+      end
+    end
+  end
+  
+  class LocalizationKey
+    def to_strings(io, language)
+      return if self.values[language].nil?
+      io << "/* #{self.context} */\n" if self.context
+      if plural?
+        values[language].text.keys.each do |plural_key|
+          if values[language].text[plural_key] != nil && values[language].text[plural_key].length > 0
+            io << "\"#{pluralize_key(id, plural_key)}\" = \"#{values[language].text[plural_key]}\";\n"
+          end
+        end
+      else
+        io << "\"#{id}\" = \"#{values[language].text}\";\n"
+      end
+      io << "\n"
+    end
+  end
+  
 	class Strings < Keyset
 	  attr_reader :filename
 	  attr_reader :language
@@ -36,12 +61,7 @@ module Babelyoda
     def save!
       FileUtils.mkdir_p(File.dirname(filename))
       File.open(filename, "wb") do |f|
-        keys.each_pair do |id, key|
-          next unless key.values[language]
-          f << "/* #{key.context} */\n" if key.context
-          f << "\"#{id}\" = \"#{key.values[language].text}\";\n"
-          f << "\n"
-        end
+        to_strings(f, language)
       end
     end
     

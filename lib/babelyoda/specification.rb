@@ -29,7 +29,7 @@ module Babelyoda
     def self.load
       trace_spec = @spec.nil? && ::Rake.application.options.trace
 	    @spec ||= load_from_file(filename = FILENAME)
-	    @spec.dump if trace_spec && @spec
+      @spec.dump if trace_spec && @spec
 	    return @spec
     end
     
