@@ -104,13 +104,15 @@ module Babelyoda
 	class Tanker
 		include Babelyoda::SpecificationLoader
 		
-		class FileNameInvalidError < RuntimeError ; end
+		class FileNameInvalidError < Exception ; end
+		class KeysetNameInvalidError < Exception ; end
 
     attr_accessor :endpoint
     attr_accessor :token
     attr_accessor :project_id
 
     def replace(keyset, language = nil)
+      validate_keyset_name!(keyset.name)
       doc = project_xml do |xml|
         keyset.to_xml(xml, language)
       end
@@ -131,11 +133,13 @@ module Babelyoda
     end
     
     def create(keyset_name)
+      validate_keyset_name!(keyset_name)
       post('/keysets/create/', { 'project-id' => project_id, 'keyset-id' => keyset_name })
     end
     
     def export(keyset_name = nil, languages = nil, status = nil, safe = false)
       payload = { 'project-id' => project_id }
+      validate_keyset_name!(keyset_name) if keyset_name
       payload.merge!({ 'keyset-id' => keyset_name }) if keyset_name
       if languages
         value = languages
@@ -148,6 +152,7 @@ module Babelyoda
     end
     
     def load_keyset(keyset_name, languages = nil, status = nil, safe = false)
+      validate_keyset_name!(keyset_name)
       doc = export(keyset_name, languages, status, safe)
       doc.css("keyset[@id='#{keyset_name}']").each do |keyset_node|
         keyset = Babelyoda::Keyset.parse_xml(keyset_node)
@@ -157,6 +162,7 @@ module Babelyoda
     end
     
     def drop_keyset!(keyset_name)
+      validate_keyset_name!(keyset_name)
       delete("/admin/project/#{project_id}/keyset/", { :keyset => keyset_name })
     end
     
@@ -272,6 +278,12 @@ module Babelyoda
         doc = Nokogiri::XML.parse(res.body)
         error = doc.css('result error')[0].content
         raise Error.new(error)
+      end
+    end
+    
+    def validate_keyset_name!(keyset_name)
+      if keyset_name.match(/[\s\t]/)
+        raise KeysetNameInvalidError.new("Keyset name must NOT contain tabs or spaces: #{keyset_name}")
       end
     end
 	end
