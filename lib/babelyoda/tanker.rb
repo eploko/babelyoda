@@ -204,16 +204,18 @@ module Babelyoda
     def post(method_name, payload)
       uri = URI(method(method_name))
       req = Net::HTTP::Post.new(uri.path)
+
       req['AUTHORIZATION'] = token
       req.content_type = multipart_content_type
       req.body = multipart_data(payload)
 
-      $logger.debug "POST URI: #{uri}"
-      $logger.debug "POST BODY: #{req.body}"
-
-      res = Net::HTTP.start(uri.host, uri.port) do |http|
+      debug_log = ''
+      conn = Net::HTTP.new(uri.host, uri.port)
+      conn.set_debug_output(debug_log)
+      res = conn.start do |http|
         http.request(req)
       end
+      $logger.debug "HTTP DEBUG: #{debug_log}"
       
       case res
       when Net::HTTPSuccess, Net::HTTPRedirection
@@ -231,11 +233,13 @@ module Babelyoda
       req = Net::HTTP::Get.new(uri.request_uri)
       req['AUTHORIZATION'] = token
 
-      $logger.debug "GET URI: #{uri}"
-
-      res = Net::HTTP.start(uri.host, uri.port) do |http|
+      debug_log = ''
+      conn = Net::HTTP.new(uri.host, uri.port)
+      conn.set_debug_output(debug_log)
+      res = conn.start do |http|
         http.request(req)
       end
+      $logger.debug "HTTP DEBUG: #{debug_log}"
 
       case res
       when Net::HTTPSuccess, Net::HTTPRedirection
@@ -253,11 +257,13 @@ module Babelyoda
       req = Net::HTTP::Delete.new(uri.request_uri)
       req['AUTHORIZATION'] = token
 
-      $logger.debug "DELETE URI: #{uri}"
-
-      res = Net::HTTP.start(uri.host, uri.port) do |http|
+      debug_log = ''
+      conn = Net::HTTP.new(uri.host, uri.port)
+      conn.set_debug_output(debug_log)
+      res = conn.start do |http|
         http.request(req)
       end
+      $logger.debug "HTTP DEBUG: #{debug_log}"
 
       case res
       when Net::HTTPSuccess, Net::HTTPRedirection
