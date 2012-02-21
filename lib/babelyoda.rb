@@ -37,7 +37,8 @@ namespace :babelyoda do
         $logger.info "Extracting strings from sources..."
         dev_lang = spec.development_language
         Babelyoda::Genstrings.run(spec.source_files, dev_lang) do |keyset|
-          old_strings_filename = strings_filename(keyset.name, dev_lang)
+          keyset_name = File.join(spec.resources_folder, keyset.name)
+          old_strings_filename = strings_filename(keyset_name, dev_lang)
           old_strings = Babelyoda::Strings.new(old_strings_filename, dev_lang).read
           old_strings.merge!(keyset)
           old_strings.save!

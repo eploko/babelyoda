@@ -19,7 +19,7 @@ module Babelyoda
           end
           Dir.glob(File.join(dir, '*.strings')).each do |strings_file|
             strings = Babelyoda::Strings.new(strings_file, language).read!
-            strings.name = File.join('Resources', File.basename(strings.name))
+            strings.name = File.basename(strings.name)
             keysets[strings.name] ||= Keyset.new(strings.name)
             keysets[strings.name].merge!(strings)
           end
