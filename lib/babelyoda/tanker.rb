@@ -111,7 +111,7 @@ module Babelyoda
     attr_accessor :token
     attr_accessor :project_id
 
-    def replace(keyset, language = nil)
+    def replace(keyset, language = :en)
       validate_keyset_name!(keyset.name)
       doc = project_xml do |xml|
         keyset.to_xml(xml, language)
@@ -120,11 +120,9 @@ module Babelyoda
         :file => StringIO.new(doc),
         'project-id' => project_id,
         'keyset-id' => keyset.name,
-        # TODO: REMOVE ME when Tanker is fixed.
-        'language' => :en,
+        'language' => language,
         :format => 'xml'
       }
-      payload.merge!({:language => language}) if language
       post('/keysets/replace/', payload)
     end
     
@@ -214,7 +212,7 @@ module Babelyoda
       req['AUTHORIZATION'] = token
       req.content_type = multipart_content_type
       req.body = multipart_data(payload)
-
+      
       debug_log = ''
       conn = Net::HTTP.new(uri.host, uri.port)
       conn.set_debug_output(debug_log)
@@ -222,6 +220,10 @@ module Babelyoda
         http.request(req)
       end
       $logger.debug "HTTP DEBUG: #{debug_log}"
+      
+      $logger.debug "=== POST DATA ==========================================="
+      $logger.debug req.body
+      $logger.debug "=== / POST DATA ========================================="
       
       case res
       when Net::HTTPSuccess, Net::HTTPRedirection

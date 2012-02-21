@@ -37,7 +37,8 @@ namespace :babelyoda do
         $logger.info "Extracting strings from sources..."
         dev_lang = spec.development_language
         Babelyoda::Genstrings.run(spec.source_files, dev_lang) do |keyset|
-          old_strings_filename = strings_filename(keyset.name, dev_lang)
+          keyset_name = File.join(spec.resources_folder, keyset.name)
+          old_strings_filename = strings_filename(keyset_name, dev_lang)
           old_strings = Babelyoda::Strings.new(old_strings_filename, dev_lang).read
           old_strings.merge!(keyset)
           old_strings.save!
@@ -151,17 +152,37 @@ namespace :babelyoda do
       end
     end
     
-    desc "Pushes resources to the translators"
+    desc "Pushes resources to the translators. Use LANGS to specify languages to push. Defaults to '#{spec.development_language}'."
     task :push => [:drop_orphan_keysets, :drop_orphan_keys] do
-      $logger.info "Pushing local keys to the remote..."
+      langs = [ spec.development_language ]
+      if ENV['LANGS']
+        if ENV['LANGS'] == '*'
+          langs = spec.all_languages
+        else
+          langs = ENV['LANGS'].split(',').map { |s| s.to_sym }
+        end
+      end
+      $logger.info "Pushing local keys for '#{langs.join(', ')}' to the remote..."
       spec.strings_files.each do |filename|
-        strings = Babelyoda::Strings.new(filename, spec.development_language).read!
-        $logger.debug "Processing keyset: #{strings.name}"
-        remote_keyset = spec.engine.load_keyset(strings.name, nil, :unapproved)
-        result = remote_keyset.merge!(strings, preserve: true)
+        local_keyset = nil
+        
+        langs.each do |lang|
+          unless local_keyset
+            local_keyset = Babelyoda::Strings.new(filename, lang).read!
+            $logger.debug "Processing keyset: #{local_keyset.name}"
+          else
+            strings = Babelyoda::Strings.new(strings_filename(local_keyset.name, lang), lang).read!
+            local_keyset.merge!(strings, preserve: true)
+          end
+        end
+        
+        remote_keyset = spec.engine.load_keyset(local_keyset.name, nil, :unapproved)
+        result = remote_keyset.merge!(local_keyset, preserve: true)
         remote_keyset.ensure_languages!(spec.all_languages)
         if result[:new] > 0 || result[:updated] > 0
-          spec.engine.replace(remote_keyset)
+          langs.each do |lang|
+            spec.engine.replace(remote_keyset, lang)
+          end
           $logger.debug "New keys: #{result[:new]} Updated keys: #{result[:updated]}"
         end
       end
