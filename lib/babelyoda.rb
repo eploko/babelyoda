@@ -164,16 +164,15 @@ namespace :babelyoda do
       end
       $logger.info "Pushing local keys for '#{langs.join(', ')}' to the remote..."
       spec.strings_files.each do |filename|
-        local_keyset = nil
+        local_keyset = Babelyoda::Strings.new(filename, spec.development_language).read!
+        $logger.debug "Processing keyset: #{local_keyset.name}"
         
         langs.each do |lang|
-          unless local_keyset
-            local_keyset = Babelyoda::Strings.new(filename, lang).read!
-            $logger.debug "Processing keyset: #{local_keyset.name}"
-          else
-            strings = Babelyoda::Strings.new(strings_filename(local_keyset.name, lang), lang).read!
-            local_keyset.merge!(strings, preserve: true)
-          end
+          next if lang == spec.development_language
+          fn = strings_filename(local_keyset.name, lang)
+          next unless File.exist?(fn)
+          strings = Babelyoda::Strings.new(fn, lang).read!
+          local_keyset.merge!(strings, preserve: true)
         end
         
         remote_keyset = spec.engine.load_keyset(local_keyset.name, nil, :unapproved)
