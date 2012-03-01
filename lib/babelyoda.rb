@@ -31,7 +31,7 @@ namespace :babelyoda do
   
   Babelyoda::Rake.spec do |spec|
     
-    desc "Extract strings from sources"
+    desc "Extract strings from sources. Use PRESERVE=1 so that orphan keys don't get dropped."
     task :extract_strings do
       spec.scm.transaction("[Babelyoda] Extract strings from sources") do 
         $logger.info "Extracting strings from sources..."
@@ -39,7 +39,8 @@ namespace :babelyoda do
         Babelyoda::Genstrings.run(spec.source_files, dev_lang) do |keyset|
           keyset_name = File.join(spec.resources_folder, keyset.name)
           old_strings_filename = strings_filename(keyset_name, dev_lang)
-          old_strings = Babelyoda::Strings.new(old_strings_filename, dev_lang).read
+          old_strings = Babelyoda::Strings.new(old_strings_filename, dev_lang)
+          old_strings.read if ENV['PRESERVE'].to_i == 1
           old_strings.merge!(keyset)
           old_strings.save!
           $logger.debug "#{old_strings_filename}: #{old_strings.keys.size} keys"
