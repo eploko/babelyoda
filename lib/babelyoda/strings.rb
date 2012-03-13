@@ -2,6 +2,7 @@ require 'rchardet19'
 
 require_relative 'file'
 require_relative 'keyset'
+require_relative 'string'
 require_relative 'strings_lexer'
 require_relative 'strings_parser'
 
@@ -21,11 +22,11 @@ module Babelyoda
       if plural?
         values[language].text.keys.each do |plural_key|
           if values[language].text[plural_key] != nil && values[language].text[plural_key].length > 0
-            io << "\"#{pluralize_key(id, plural_key)}\" = \"#{values[language].text[plural_key]}\";\n"
+            io << "\"#{pluralize_key(id, plural_key).escape_double_quotes}\" = \"#{values[language].text[plural_key].escape_double_quotes}\";\n"
           end
         end
       else
-        io << "\"#{id}\" = \"#{values[language].text}\";\n"
+        io << "\"#{id.escape_double_quotes}\" = \"#{values[language].text.escape_double_quotes}\";\n"
       end
       io << "\n"
     end

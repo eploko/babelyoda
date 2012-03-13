@@ -44,6 +44,27 @@ EOF
     end
   end
   
+  context "when keys or values have double-quotes in them" do
+    it "should properly escape them when being serialized" do
+      strings = Babelyoda::Strings.new('Combined.strings', :en)
+
+      value = Babelyoda::LocalizationValue.new(:en, 'Some "translation"')
+      key = Babelyoda::LocalizationKey.new('Some "key"', 'Some comment')
+      key << value
+      strings.merge_key!(key)
+
+      io = StringIO.new
+      strings.to_strings(io, :en)
+      io.rewind
+      io.read.should == 
+<<-EOF
+/* Some comment */
+"Some \\"key\\"" = "Some \\"translation\\"";
+
+EOF
+    end
+  end
+  
   context "with plural keys" do
     it "serializes to an IO object" do
       strings = Babelyoda::Strings.new('Combined.strings', :en)
