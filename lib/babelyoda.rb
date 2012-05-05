@@ -154,7 +154,7 @@ namespace :babelyoda do
     end
     
     desc "Pushes resources to the translators. Use LANGS to specify languages to push. Defaults to '#{spec.development_language}'."
-    task :push => [:drop_orphan_keysets, :drop_orphan_keys] do
+    task :push_keys do
       langs = [ spec.development_language ]
       if ENV['LANGS']
         if ENV['LANGS'] == '*'
@@ -186,6 +186,10 @@ namespace :babelyoda do
           $logger.debug "New keys: #{result[:new]} Updated keys: #{result[:updated]}"
         end
       end
+    end
+    
+    desc "Pushes resources to the translators, then drops orphan keys and keysets on the remote. Use LANGS to specify languages to push. Defaults to '#{spec.development_language}'."
+    task :push => [:push_keys, :drop_orphan_keysets, :drop_orphan_keys] do
     end
     
     desc "Fetches remote strings and merges them down into local .string files"
