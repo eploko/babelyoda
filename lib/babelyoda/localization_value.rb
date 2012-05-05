@@ -29,7 +29,7 @@ module Babelyoda
     
     def merge!(other_value, options = {})
       updated = false
-      options = { preserve: false }.merge!(options)
+      options = resolve_options options
 
       unless @language.to_sym == other_value.language.to_sym
         raise "Can't merge values in different languages: #{@language.to_sym} and #{other_value.language.to_sym}"
@@ -43,7 +43,7 @@ module Babelyoda
           updated ||= key_updated
         end
       else
-        if (!options[:preserve] || @status.to_sym == :requires_translation)
+        if mergeable?(options)
           if @text != other_value.text && !other_value.nil?
             @text = other_value.text 
             updated = true
@@ -56,8 +56,21 @@ module Babelyoda
   private
     include Babelyoda::Regexp
     
+    def resolve_options(options = {})
+      default_options.merge!(options)
+    end
+    
+    def default_options
+      { preserve: false, plain_text_keys: false }
+    end
+    
+    def mergeable?(options = {})
+      options = resolve_options options
+      !options[:preserve] || (@status.to_sym == :requires_translation && options[:plain_text_keys])
+    end
+    
     def merge_plural_type!(type, other_value, options)
-      if (!options[:preserve] || @status.to_sym == :requires_translation)
+      if mergeable?
         if @text[type] != other_value && !other_value.nil?
           @text[type] = other_value 
           return true

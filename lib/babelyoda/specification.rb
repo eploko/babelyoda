@@ -9,6 +9,7 @@ module Babelyoda
     attr_accessor :name
     attr_accessor :development_language
     attr_accessor :localization_languages
+    attr_accessor :plain_text_keys
     attr_accessor :engine
     attr_accessor :source_files    
     attr_accessor :resources_folder
@@ -17,6 +18,11 @@ module Babelyoda
     attr_accessor :scm
     
     FILENAME = 'Babelfile'
+    
+    def initialize(*args)
+      super
+      @plain_text_keys = true
+    end
     
     def self.generate_default_babelfile
       template_file_name = File.join(BABELYODA_PATH, 'templates', 'Babelfile.erb')

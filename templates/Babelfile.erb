@@ -2,11 +2,23 @@ Babelyoda::Specification.new do |s|
 	s.name = 'YOUR PROJECT NAME HERE'
 	s.development_language = :en
 	s.localization_languages = [:ru, :uk, :tr]
+	
+	# Specifies whether human-readable plain text values (usu. in the
+	# development language) are used as localization keys.
+	#
+	# Set to false if you use something like 'views.panel.msg1' as keys in your
+	# project.
+	#
+	# Default is true.
+	#
+	# s.plain_text_keys = true
+	
 	s.engine = Babelyoda::Tanker.new do |t|
 		t.token = 'FIX: TANKER TOKEN HERE'
 		t.project_id = 'FIX: TANKER PROJECT ID HERE'
 		t.endpoint = 'FIX: TANKER END POINT HERE'
 	end
+	
 	s.scm = Babelyoda::Git.new
 	s.source_files = FileList['Classes/**/*.{m,mm,h}']
 	s.resources_folder = 'Resources'
