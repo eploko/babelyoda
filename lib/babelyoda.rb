@@ -154,7 +154,7 @@ namespace :babelyoda do
     end
     
     desc "Pushes resources to the translators. Use LANGS to specify languages to push. Defaults to '#{spec.development_language}'."
-    task :push_keys do
+    task :push_keys => :create_keysets do
       langs = [ spec.development_language ]
       if ENV['LANGS']
         if ENV['LANGS'] == '*'
