@@ -100,7 +100,7 @@ namespace :babelyoda do
           $logger.debug "Tanker: An existing keyset found: #{keyset_name}"
           next 
         end
-        strings = Babelyoda::Strings.new(filename, spec.development_language).read!
+        strings = Babelyoda::Strings.new(filename, spec.development_language).read
         unless strings.empty?
           spec.engine.create(keyset_name)
           $logger.debug "Tanker: Created NEW keyset: #{keyset_name}"
