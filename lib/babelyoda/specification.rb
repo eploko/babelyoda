@@ -19,11 +19,6 @@ module Babelyoda
     
     FILENAME = 'Babelfile'
     
-    def initialize(*args)
-      super
-      @plain_text_keys = true
-    end
-    
     def self.generate_default_babelfile
       template_file_name = File.join(BABELYODA_PATH, 'templates', 'Babelfile.erb')
       template = File.read(template_file_name)
@@ -35,6 +30,7 @@ module Babelyoda
     def self.load
       trace_spec = @spec.nil? && ::Rake.application.options.trace
 	    @spec ||= load_from_file(filename = FILENAME)
+      @spec.plain_text_keys = true if @spec.plain_text_keys.nil?
       @spec.dump if trace_spec && @spec
 	    return @spec
     end

@@ -61,7 +61,7 @@ module Babelyoda
     end
     
     def default_options
-      { preserve: false, plain_text_keys: false }
+      { preserve: false, plain_text_keys: true }
     end
     
     def mergeable?(options = {})
