@@ -177,7 +177,7 @@ namespace :babelyoda do
         end
         
         remote_keyset = spec.engine.load_keyset(local_keyset.name, nil, :unapproved)
-        result = remote_keyset.merge!(local_keyset, preserve: true)
+        result = remote_keyset.merge!(local_keyset, preserve: true, plain_text_keys: spec.plain_text_keys)
         remote_keyset.ensure_languages!(spec.all_languages)
         if result[:new] > 0 || result[:updated] > 0
           langs.each do |lang|
