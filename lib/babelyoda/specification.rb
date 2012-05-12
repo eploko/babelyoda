@@ -9,6 +9,7 @@ module Babelyoda
     attr_accessor :name
     attr_accessor :development_language
     attr_accessor :localization_languages
+    attr_accessor :plain_text_keys
     attr_accessor :engine
     attr_accessor :source_files    
     attr_accessor :resources_folder
@@ -29,6 +30,7 @@ module Babelyoda
     def self.load
       trace_spec = @spec.nil? && ::Rake.application.options.trace
 	    @spec ||= load_from_file(filename = FILENAME)
+      @spec.plain_text_keys = true if @spec.plain_text_keys.nil?
       @spec.dump if trace_spec && @spec
 	    return @spec
     end

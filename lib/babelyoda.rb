@@ -100,7 +100,7 @@ namespace :babelyoda do
           $logger.debug "Tanker: An existing keyset found: #{keyset_name}"
           next 
         end
-        strings = Babelyoda::Strings.new(filename, spec.development_language).read!
+        strings = Babelyoda::Strings.new(filename, spec.development_language).read
         unless strings.empty?
           spec.engine.create(keyset_name)
           $logger.debug "Tanker: Created NEW keyset: #{keyset_name}"
@@ -154,7 +154,7 @@ namespace :babelyoda do
     end
     
     desc "Pushes resources to the translators. Use LANGS to specify languages to push. Defaults to '#{spec.development_language}'."
-    task :push => [:drop_orphan_keysets, :drop_orphan_keys] do
+    task :push_keys => :create_keysets do
       langs = [ spec.development_language ]
       if ENV['LANGS']
         if ENV['LANGS'] == '*'
@@ -177,7 +177,7 @@ namespace :babelyoda do
         end
         
         remote_keyset = spec.engine.load_keyset(local_keyset.name, nil, :unapproved)
-        result = remote_keyset.merge!(local_keyset, preserve: true)
+        result = remote_keyset.merge!(local_keyset, preserve: true, plain_text_keys: spec.plain_text_keys)
         remote_keyset.ensure_languages!(spec.all_languages)
         if result[:new] > 0 || result[:updated] > 0
           langs.each do |lang|
@@ -186,6 +186,10 @@ namespace :babelyoda do
           $logger.debug "New keys: #{result[:new]} Updated keys: #{result[:updated]}"
         end
       end
+    end
+    
+    desc "Pushes resources to the translators, then drops orphan keys and keysets on the remote. Use LANGS to specify languages to push. Defaults to '#{spec.development_language}'."
+    task :push => [:push_keys, :drop_orphan_keysets, :drop_orphan_keys] do
     end
     
     desc "Fetches remote strings and merges them down into local .string files"
@@ -205,8 +209,18 @@ namespace :babelyoda do
       end
     end
     
-    desc "Incrementally localizes XIB files"
-    task :localize_xibs do
+    desc "Marks current development language XIBs as source for further localization."
+    task :update_xib_hashes do    
+      spec.scm.transaction("[Babelyoda] Update XIB SHA1 version refs") do 
+        $logger.info "Update XIB SHA1 version refs..."
+        spec.xib_files.each do |filename|
+          spec.scm.store_version!(filename)
+        end
+      end
+    end
+    
+    task "NB! Incrementally localizes XIB files (but doesn't update XIB SHA1 version refs)"
+    task :localize_xibs_wo_updating_xib_hashes do
       spec.scm.transaction("[Babelyoda] Localize XIB files") do 
         $logger.info "Translating XIB files..."
         spec.xib_files.each do |filename|
@@ -220,13 +234,11 @@ namespace :babelyoda do
             $logger.warn "#{filename} has no localizable resources. No localization needed."
           end
         end
-      end
-      
-      spec.scm.transaction("[Babelyoda] Update XIB SHA1 version refs") do 
-        spec.xib_files.each do |filename|
-          spec.scm.store_version!(filename)
-        end
-      end
+      end      
+    end
+    
+    desc "Incrementally localizes XIB files"
+    task :localize_xibs => [:localize_xibs_wo_updating_xib_hashes, :update_xib_hashes] do
     end
 
     desc "Pull remote translations"
@@ -269,7 +281,7 @@ namespace :babelyoda do
       end
       exit 1 unless all_found
     end
-    
+        
     namespace :remote do
       
       desc "List remote keysets"
