@@ -209,8 +209,18 @@ namespace :babelyoda do
       end
     end
     
-    desc "Incrementally localizes XIB files"
-    task :localize_xibs do
+    desc "Marks current development language XIBs as source for further localization."
+    task :update_xib_hashes do    
+      spec.scm.transaction("[Babelyoda] Update XIB SHA1 version refs") do 
+        $logger.info "Update XIB SHA1 version refs..."
+        spec.xib_files.each do |filename|
+          spec.scm.store_version!(filename)
+        end
+      end
+    end
+    
+    task "NB! Incrementally localizes XIB files (but doesn't update XIB SHA1 version refs)"
+    task :localize_xibs_wo_updating_xib_hashes do
       spec.scm.transaction("[Babelyoda] Localize XIB files") do 
         $logger.info "Translating XIB files..."
         spec.xib_files.each do |filename|
@@ -224,13 +234,11 @@ namespace :babelyoda do
             $logger.warn "#{filename} has no localizable resources. No localization needed."
           end
         end
-      end
-      
-      spec.scm.transaction("[Babelyoda] Update XIB SHA1 version refs") do 
-        spec.xib_files.each do |filename|
-          spec.scm.store_version!(filename)
-        end
-      end
+      end      
+    end
+    
+    desc "Incrementally localizes XIB files"
+    task :localize_xibs => [:localize_xibs_wo_updating_xib_hashes, :update_xib_hashes] do
     end
 
     desc "Pull remote translations"
@@ -273,7 +281,7 @@ namespace :babelyoda do
       end
       exit 1 unless all_found
     end
-    
+        
     namespace :remote do
       
       desc "List remote keysets"

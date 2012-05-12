@@ -11,9 +11,10 @@ module Babelyoda
 	  end
 	  
 	  def store_version!(filename)
-	    @versions[filename] = git_ls_sha1(filename)
+	    versions[filename] = git_ls_sha1(filename)
       should_add = !File.exist?(versions.filename)
 	    versions.save!
+	    $logger.info "[SHA1] #{@versions[filename]} <= #{filename}"
     end
     
     def fetch_versions!(*filenames, &block)
