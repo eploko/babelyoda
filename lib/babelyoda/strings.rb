@@ -9,8 +9,13 @@ require_relative 'strings_parser'
 module Babelyoda
   class Keyset
     def to_strings(io, language)
-      keys.each_value do |key|
-        key.to_strings(io, language)
+      if keys.empty?
+        io << "/* No strings yet. */\n" 
+      else
+        keys.keys.sort.each do |key|
+          localization_key = keys[key]
+          localization_key.to_strings(io, language)
+        end
       end
     end
   end
@@ -20,7 +25,7 @@ module Babelyoda
       return if self.values[language].nil?
       io << "/* #{self.context} */\n" if self.context
       if plural?
-        values[language].text.keys.each do |plural_key|
+        values[language].text.keys.sort.each do |plural_key|
           if values[language].text[plural_key] != nil && values[language].text[plural_key].length > 0
             io << "\"#{pluralize_key(id, plural_key).escape_double_quotes}\" = \"#{values[language].text[plural_key].escape_double_quotes}\";\n"
           end

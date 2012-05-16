@@ -6,11 +6,12 @@ describe "strings-based keyset" do
   end
   
   context "when empty" do
-    it "serializes to an IO object" do
+    it "serializes a comment to an IO object" do
       strings = Babelyoda::Strings.new('Combined.strings', :en)
       io = StringIO.new
       strings.to_strings(io, :en)
-      io.read.should == ''
+      io.rewind
+      io.read.should == "/* No strings yet. */\n"
     end
   end
   
