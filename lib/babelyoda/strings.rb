@@ -9,14 +9,11 @@ require_relative 'strings_parser'
 module Babelyoda
   class Keyset
     def to_strings(io, language)
-      if keys.empty?
-        io << "/* No strings yet. */\n" 
-      else
-        keys.keys.sort.each do |key|
-          localization_key = keys[key]
-          localization_key.to_strings(io, language)
-        end
+      keys.keys.sort.each do |key|
+        localization_key = keys[key]
+        localization_key.to_strings(io, language)
       end
+      io << "/* No strings yet. */\n" if io.size == 0
     end
   end
   
