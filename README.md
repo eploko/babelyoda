@@ -1,8 +1,10 @@
-= babelyoda
+# babelyoda
+
+[![Dependency Status](https://gemnasium.com/eploko/babelyoda.png)](https://gemnasium.com/eploko/babelyoda)
 
 A simple utility to push/pull l10n resources of an Xcode project to/from the translators.
 
-== Note on Patches/Pull Requests
+## Note on Patches/Pull Requests
  
 * Fork the project.
 * Make your feature addition or bug fix.
@@ -12,6 +14,6 @@ A simple utility to push/pull l10n resources of an Xcode project to/from the tra
   (if you want to have your own version, that is fine but bump version in a commit by itself I can ignore when I pull)
 * Send me a pull request. Bonus points for topic branches.
 
-== Copyright
+## Copyright
 
 Copyright (c) 2010-2012 Andrey Subbotin. See LICENSE for details.
