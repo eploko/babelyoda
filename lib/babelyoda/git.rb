@@ -9,14 +9,14 @@ module Babelyoda
     def version_exist?(filename)
       versions.exist?(filename)
 	  end
-	  
+
 	  def store_version!(filename)
 	    versions[filename] = git_ls_sha1(filename)
       should_add = !File.exist?(versions.filename)
 	    versions.save!
 	    $logger.info "[SHA1] #{@versions[filename]} <= #{filename}"
     end
-    
+
     def fetch_versions!(*filenames, &block)
       Dir.mktmpdir do |dir|
         results = []
@@ -30,7 +30,7 @@ module Babelyoda
         block.call(results)
       end
     end
-    
+
     def transaction(msg)
       check_requirements!
       yield if block_given?
@@ -40,16 +40,16 @@ module Babelyoda
         git_commit!(msg)
       end
     end
-		
+
   private
 
     def versions
 	    @versions ||= GitVersions.new
     end
-    
+
 		def check_requirements!
 		  unless clean?
-		    $logger.error "The working copy is not clean. Please commit your work before running Babelyoda tasks." 
+		    $logger.error "The working copy is not clean. Please commit your work before running Babelyoda tasks."
 		    exit 1
 		  end
 		end
@@ -57,7 +57,7 @@ module Babelyoda
     def git_modified?(filename)
       git_status.has_key?(filename)
     end
-    
+
     def git_status
       result = {}
       `git status --porcelain`.scan(/^(\sM|\sD|\?\?)\s+(.*)$/).each do |m|
@@ -65,7 +65,7 @@ module Babelyoda
       end
       result
     end
-    
+
     def git_add!(filename)
 	    ncmd = ['git', 'add', filename]
 	    rc = Kernel.system(*ncmd)
@@ -80,7 +80,7 @@ module Babelyoda
 	      $logger.info output.gsub!(/[\n\r]/, ' ')
 	    end
     end
-    
+
     def git_show(sha1, filename = nil)
 	    ncmd = ['git', 'show', sha1]
       IO.popen(ncmd) { |io|
@@ -92,15 +92,15 @@ module Babelyoda
       }
 	    $logger.error "#{ncmd}" unless $? == 0
     end
-    
+
     def git_ls_sha1(filename)
       matches = `git ls-files -s '#{filename}'`.match(/^\d{6}\s+([^\s]+)\s+.*$/)
       $logger.error "Couldn't get SHA1 for: #{filename}" unless matches
       matches[1]
     end
-  
+
     def clean?
-      `git status 2>&1`.match(/^nothing to commit \(working directory clean\)$/)
+      `git status --porcelain`.empty?
 	  end
 	end
 end
