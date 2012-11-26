@@ -11,14 +11,14 @@ module Babelyoda
     attr_accessor :localization_languages
     attr_accessor :plain_text_keys
     attr_accessor :engine
-    attr_accessor :source_files    
+    attr_accessor :source_files
     attr_accessor :resources_folder
-    attr_accessor :xib_files    
+    attr_accessor :xib_files
     attr_accessor :strings_files
     attr_accessor :scm
-    
+
     FILENAME = 'Babelfile'
-    
+
     def self.generate_default_babelfile
       template_file_name = File.join(BABELYODA_PATH, 'templates', 'Babelfile.erb')
       template = File.read(template_file_name)
@@ -26,15 +26,17 @@ module Babelyoda
         f.write(ERB.new(template).result())
       end
     end
-    
+
     def self.load
       trace_spec = @spec.nil? && ::Rake.application.options.trace
 	    @spec ||= load_from_file(filename = FILENAME)
-      @spec.plain_text_keys = true if @spec.plain_text_keys.nil?
-      @spec.dump if trace_spec && @spec
+      if @spec
+        @spec.plain_text_keys = true if @spec.plain_text_keys.nil?
+        @spec.dump if trace_spec && @spec
+      end
 	    return @spec
     end
-    
+
     def all_languages
       [ development_language, localization_languages].flatten!
     end
