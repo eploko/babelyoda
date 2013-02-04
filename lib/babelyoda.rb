@@ -304,7 +304,7 @@ namespace :babelyoda do
             spec.engine.drop_keyset!(keyset_name)
           end
         else
-          $logger.error "Please provide keyset names to drop in the KEYSET environment variable. " +
+          $logger.error "Please provide keyset names to drop in the KEYSETS environment variable. " +
                         "Separate by commas. Use * for ALL."
         end
       end
