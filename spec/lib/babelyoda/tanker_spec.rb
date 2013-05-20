@@ -23,9 +23,9 @@ describe "tanker XML serialization" do
                              '<value language="en" status="requires_translation">' + "\n" +
                              '  <plural>' + "\n" +
                              '    <one>some plural %u translation</one>' + "\n" +
-                             '    <some></some>' + "\n" +
-                             '    <many></many>' + "\n" +
-                             '    <none></none>' + "\n" +
+                             '    <some/>' + "\n" +
+                             '    <many/>' + "\n" +
+                             '    <none/>' + "\n" +
                              '  </plural>' + "\n" +
                              '</value>' + "\n"
   end
@@ -70,8 +70,8 @@ describe "tanker XML serialization" do
     <plural>
       <one>Some translation for one</one>
       <some>Some translation for some</some>
-      <many></many>
-      <none></none>
+      <many/>
+      <none/>
     </plural>
   </value>
 </key>

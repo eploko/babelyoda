@@ -26,7 +26,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "active_support",  '~> 3.0', '>= 3.0.0'
   s.add_runtime_dependency "rchardet19",      '~> 1.3', '>= 1.3.5'
   s.add_runtime_dependency "builder",         '~> 3.0', '>= 3.0.0'
-  s.add_runtime_dependency "nokogiri",        '~> 1.5', '>= 1.5.0'
+  s.add_runtime_dependency "nokogiri",        '~> 1.5', '>= 1.5.5'
   s.add_runtime_dependency "term-ansicolor",  '~> 1.0', '>= 1.0.7'
   s.add_runtime_dependency "log4r-color",     '~> 1.2'
 end
