@@ -23,10 +23,8 @@ Gem::Specification.new do |s|
   s.add_development_dependency "ruby_gntp"
   s.add_runtime_dependency "awesome_print",   '~> 1.0', '>= 1.0.2'
   s.add_runtime_dependency "rake",            '~> 0.9', '>= 0.9.2.2'
-  s.add_runtime_dependency "active_support",  '~> 3.0', '>= 3.0.0'
   s.add_runtime_dependency "rchardet19",      '~> 1.3', '>= 1.3.5'
   s.add_runtime_dependency "builder",         '~> 3.0', '>= 3.0.0'
   s.add_runtime_dependency "nokogiri",        '~> 1.5', '>= 1.5.5'
-  s.add_runtime_dependency "term-ansicolor",  '~> 1.0', '>= 1.0.7'
-  s.add_runtime_dependency "log4r-color",     '~> 1.2'
+  s.add_runtime_dependency "log4r",           '~> 1', '>= 1.1.10'
 end
