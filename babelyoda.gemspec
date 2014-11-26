@@ -5,7 +5,7 @@ require "babelyoda/version"
 Gem::Specification.new do |s|
   s.name        = "babelyoda"
   s.version     = Babelyoda::VERSION
-  s.authors     = ["Andrey Subbotin"]
+  s.authors     = ["Andrey Subbotin", "Ivan Moskalev", "Alexander Denisov"]
   s.email       = ["andrey@subbotin.me"]
   s.homepage    = "http://github.com/eploko/babelyoda"
   s.summary     = "Xcode project localization made easy"
