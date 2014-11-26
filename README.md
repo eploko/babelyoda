@@ -14,6 +14,13 @@ A simple utility to push/pull l10n resources of an Xcode project to/from the tra
   (if you want to have your own version, that is fine but bump version in a commit by itself I can ignore when I pull)
 * Send me a pull request. Bonus points for topic branches.
 
+## Thanks
+
+The following people contributed patches, made suggestions or made otherwise helpful comments. Thanks to…
+
+* [Ivan Moskalev](https://github.com/ivanmoskalev)
+* [Alexander Denisov](https://github.com/StoneSpb)
+
 ## Copyright
 
-Copyright (c) 2010-2012 Andrey Subbotin. See LICENSE for details.
+Copyright (c) 2010-2014 Andrey Subbotin. See LICENSE for details.
