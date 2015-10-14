@@ -22,11 +22,11 @@ module Babelyoda
 
           if big_ratio && big_delta
             lang = value.language.to_sym
-            problem = Babelyoda::LongTranslation.new(dev_text, text, key.context)
+            translation = Babelyoda::LongTranslation.new(dev_text, text, key.context)
             if long_translations.has_key?(lang)
-              long_translations[lang].push(problem)
+              long_translations[lang].push(translation)
             else
-              long_translations[lang] = [problem]
+              long_translations[lang] = [translation]
             end
           end
         end
@@ -53,15 +53,8 @@ module Babelyoda
     
     def initialize(dev_text, text, context)
       @dev_text = dev_text
-      @other_text = text
+      @text = text
       @context = context
-    end
-   
-    def ==(other_obj)
-      dev_texts_equal = @dev_text == other_obj.dev_text
-      texts_equal = @text == other_obj.text
-      contexts_equal = @context == other_obj.context
-      dev_texts_equal && texts_equal && contexts_equal
     end
   end
 end
