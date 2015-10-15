@@ -56,5 +56,12 @@ module Babelyoda
       @text = text
       @context = context
     end
+    
+    def ==(other_obj)
+      dev_texts_equal = @dev_text == other_obj.dev_text
+      texts_equal = @text == other_obj.text
+      contexts_equal = @context == other_obj.context
+      dev_texts_equal && texts_equal && contexts_equal
+   end
   end
 end
