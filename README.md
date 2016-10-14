@@ -20,7 +20,8 @@ The following people contributed patches, made suggestions or made otherwise hel
 
 * [Ivan Moskalev](https://github.com/ivanmoskalev)
 * [Alexander Denisov](https://github.com/StoneSpb)
+* [Mikhail Chupin](https://github.com/ilmarion)
 
 ## Copyright
 
-Copyright (c) 2010-2014 Andrey Subbotin. See LICENSE for details.
+Copyright (c) 2010-2016 Andrey Subbotin. See LICENSE for details.

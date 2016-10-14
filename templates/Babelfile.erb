@@ -24,4 +24,9 @@ Babelyoda::Specification.new do |s|
 	s.resources_folder = 'Resources'
 	s.xib_files = FileList['{Classes,Resources}/**/en.lproj/*.{xib}']
 	s.strings_files = FileList['{Classes,Resources}/**/en.lproj/*.{strings}']
+	
+	s.length_checker_params = Babelyoda::LengthCheckerParams.new do |p|
+		p.ratio = 1.5
+		p.delta = 10
+	end
 end

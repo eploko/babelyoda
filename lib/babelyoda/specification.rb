@@ -16,6 +16,7 @@ module Babelyoda
     attr_accessor :xib_files
     attr_accessor :strings_files
     attr_accessor :scm
+    attr_accessor :length_checker_params
 
     FILENAME = 'Babelfile'
 
