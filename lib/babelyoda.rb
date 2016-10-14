@@ -8,6 +8,8 @@ require_relative 'babelyoda/git'
 require_relative 'babelyoda/ibtool'
 require_relative 'babelyoda/keyset'
 require_relative 'babelyoda/localization_key'
+require_relative 'babelyoda/length_checker'
+require_relative 'babelyoda/length_checker_params'
 require_relative 'babelyoda/localization_value'
 require_relative 'babelyoda/logger'
 require_relative 'babelyoda/rake'
@@ -247,17 +249,7 @@ namespace :babelyoda do
     
     desc "Verifies all local translations are present"
     task :verify do
-      combined_keyset = Babelyoda::Keyset.new('babelyoda.verify')
-      spec.strings_files.each do |filename|
-        dev_lang_strings = Babelyoda::Strings.new(filename, spec.development_language).read
-        combined_keyset.merge!(dev_lang_strings)
-        spec.localization_languages.each do |language|
-          lang_strings = Babelyoda::Strings.new(File.localized(filename, language), language).read
-          combined_keyset.merge!(lang_strings)
-        end
-      end
-      combined_keyset.drop_empty!
-      
+      combined_keyset = combined_keyset(spec, 'babelyoda.verify')
       count = {}
       spec.all_languages.each { |lang| count[lang.to_sym] = 0}
       
@@ -280,6 +272,23 @@ namespace :babelyoda do
         end
       end
       exit 1 unless all_found
+    end
+    
+    desc "Checks localizations length"
+    task :check_localizations_length do
+      combined_keyset = combined_keyset(spec, 'babelyoda.check_length')
+      dev_lang = spec.development_language.to_sym
+      params = spec.length_checker_params
+      checker = Babelyoda::LengthChecker.new(dev_lang, params)
+      checker.long_translations(combined_keyset).each_pair do |lang, translations|
+        $logger.warn lang.to_s
+        translations.each do |t|
+          $logger.warn "/* #{t.context} */"
+          $logger.warn "'#{t.text}' >>> '#{t.dev_text}'"
+          $logger.warn ""
+        end
+        $logger.warn ""
+      end
     end
         
     namespace :remote do
@@ -320,4 +329,18 @@ def strings_filename(keyset_name, lang)
   else
     File.join("#{lang}.lproj", "#{keyset_name}.strings")
   end
+end
+
+def combined_keyset(spec, keyset_name)
+  keyset = Babelyoda::Keyset.new(keyset_name)
+  spec.strings_files.each do |filename|
+    dev_lang_strings = Babelyoda::Strings.new(filename, spec.development_language).read
+    keyset.merge!(dev_lang_strings)
+    spec.localization_languages.each do |language|
+      lang_strings = Babelyoda::Strings.new(File.localized(filename, language), language).read
+      keyset.merge!(lang_strings)
+    end
+  end
+  keyset.drop_empty!
+  keyset
 end
