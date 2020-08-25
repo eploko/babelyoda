@@ -1,3 +1,5 @@
+# !!! The project is no longer maintained !!!
+
 # babelyoda
 
 [![Dependency Status](https://gemnasium.com/eploko/babelyoda.png)](https://gemnasium.com/eploko/babelyoda)
